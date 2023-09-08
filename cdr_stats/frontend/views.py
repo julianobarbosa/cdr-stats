@@ -140,18 +140,17 @@ def login_view(request):
         if loginform.is_valid():
             cd = loginform.cleaned_data
             user = authenticate(username=cd['user'], password=cd['password'])
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    request.session['has_notified'] = False
-                    # Redirect to a success page (dashboard).
-                    return HttpResponseRedirect('/dashboard/')
-                else:
-                    # Return a 'disabled account' error message
-                    errorlogin = _('disabled Account')
-            else:
+            if user is None:
                 # Return an 'invalid login' error message.
                 errorlogin = _('invalid Login.')
+            elif user.is_active:
+                login(request, user)
+                request.session['has_notified'] = False
+                # Redirect to a success page (dashboard).
+                return HttpResponseRedirect('/dashboard/')
+            else:
+                # Return a 'disabled account' error message
+                errorlogin = _('disabled Account')
         else:
             # Return an 'Valid User Credentials' error message.
             errorlogin = _('enter valid user credentials.')

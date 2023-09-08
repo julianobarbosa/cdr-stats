@@ -103,19 +103,23 @@ class CustomIndexDashboard(Dashboard):
         ))
 
         # append a link list module for "quick links"
-        self.children.append(modules.LinkList(
-            _('quick links').capitalize(),
-            layout='inline',
-            draggable=True,
-            deletable=True,
-            collapsible=True,
-            children=[
-                [_('Go to CDR-Stats.org'), 'http://www.cdr-stats.org/'],
-                [_('change password').capitalize(),
-                 reverse('%s:password_change' % site_name)],
-                [_('log out').capitalize(), reverse('%s:logout' % site_name)],
-            ]
-        ))
+        self.children.append(
+            modules.LinkList(
+                _('quick links').capitalize(),
+                layout='inline',
+                draggable=True,
+                deletable=True,
+                collapsible=True,
+                children=[
+                    [_('Go to CDR-Stats.org'), 'http://www.cdr-stats.org/'],
+                    [
+                        _('change password').capitalize(),
+                        reverse(f'{site_name}:password_change'),
+                    ],
+                    [_('log out').capitalize(), reverse(f'{site_name}:logout')],
+                ],
+            )
+        )
 
         if not settings.DEBUG:
             # append a feed module

@@ -61,9 +61,7 @@ def translate_disposition(disposition):
     except:
         transdisposition = 0
 
-    hangup_cause_id = get_hangupcause_id(transdisposition)
-
-    return hangup_cause_id
+    return get_hangupcause_id(transdisposition)
 
 
 def sanitize_cdr_field(field):

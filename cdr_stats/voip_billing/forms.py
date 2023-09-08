@@ -69,8 +69,10 @@ class FileImport(forms.Form):
         """
         filename = self.cleaned_data["csv_file"]
         file_exts = ("csv", "txt")
-        if not str(filename).split(".")[1].lower() in file_exts:
-            raise forms.ValidationError(_(u'document types accepted: %s' % ' '.join(file_exts)))
+        if str(filename).split(".")[1].lower() not in file_exts:
+            raise forms.ValidationError(
+                _(f"document types accepted: {' '.join(file_exts)}")
+            )
         else:
             return filename
 
@@ -114,8 +116,8 @@ class CarrierRate_fileImport(FileImport):
         Percentage Value must be in digit (int/float)
         """
         chk = self.cleaned_data["chk"]
-        p_p = self.cleaned_data["profit_percentage"]
         if chk:
+            p_p = self.cleaned_data["profit_percentage"]
             if not isint(p_p):
                 raise forms.ValidationError(_("please enter int/float value"))
             else:
@@ -173,18 +175,18 @@ class PrefixRetailRateForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(PrefixRetailRateForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_class = 'well'
         css_class = 'col-md-4'
+        self.helper.form_class = 'well'
         self.helper.layout = Layout(
             Div(
                 Div('prefix', css_class=css_class),
                 css_class='row',
             ),
             FormActions(
-                HTML('<button type="submit" id="id_submit" name="submit" class="btn btn-primary" value="submit">'
-                     '<i class="fa fa-search fa-lg"></i> %s</button>'
-                     '<a href="/rates/" class="btn btn-danger">%s</a>' % (_('search').title(), _('clear').title()))
-            )
+                HTML(
+                    f"""<button type="submit" id="id_submit" name="submit" class="btn btn-primary" value="submit"><i class="fa fa-search fa-lg"></i> {_('search').title()}</button><a href="/rates/" class="btn btn-danger">{_('clear').title()}</a>"""
+                )
+            ),
         )
 
 

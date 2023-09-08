@@ -54,10 +54,7 @@ class ForeignKeySearchInput(forms.HiddenInput):
         if attrs is None:
             attrs = {}
         rendered = super(ForeignKeySearchInput, self).render(name, value, attrs)
-        if value:
-            label = self.label_for_value(value)
-        else:
-            label = u''
+        label = self.label_for_value(value) if value else u''
         return rendered + mark_safe(u'''
 <input type="text" id="lookup_%(name)s" value="%(label)s" size="40"/>
 <script type="text/javascript">
@@ -267,25 +264,22 @@ class AutocompleteModelAdmin(admin.ModelAdmin):
             def construct_search(field_name):
                 # use different lookup methods depending on the notation
                 if field_name.startswith('^'):
-                    return "%s__istartswith" % field_name[1:]
+                    return f"{field_name[1:]}__istartswith"
                 elif field_name.startswith('='):
-                    return "%s__iexact" % field_name[1:]
+                    return f"{field_name[1:]}__iexact"
                 elif field_name.startswith('@'):
-                    return "%s__search" % field_name[1:]
+                    return f"{field_name[1:]}__search"
                 else:
-                    return "%s__icontains" % field_name
+                    return f"{field_name}__icontains"
 
             model = models.get_model(app_label, model_name)
             q = None
             for field_name in search_fields.split(','):
                 if field_name == "prefix":
-                    field_name = '^' + field_name
+                    field_name = f'^{field_name}'
                 name = construct_search(field_name)
                 # print name+ '='+ query
-                if q:
-                    q = q | models.Q(**{str(name): query})
-                else:
-                    q = models.Q(**{str(name): query})
+                q = q | models.Q(**{str(name): query}) if q else models.Q(**{str(name): query})
             qs = model.objects.filter(q)
 
             rel_name = field_name.split('__')[0]
@@ -304,18 +298,16 @@ class AutocompleteModelAdmin(admin.ModelAdmin):
                                                      self.related_search_fields[db_field.name])
 
             # extra HTML to the end of the rendered output.
-            if 'request' in kwargs.keys():
+            if 'request' in kwargs:
                 kwargs.pop('request')
 
             formfield = db_field.formfield(**kwargs)
-            # Don't wrap raw_id fields.
-            # Their add function is in the popup window.
-            if db_field.name not in self.raw_id_fields:
                 # formfield can be None if it came from a OneToOneField with
                 # parent_link=True
-                if formfield is not None:
+            if formfield is not None:
+                if db_field.name not in self.raw_id_fields:
                     formfield.widget = \
-                        AutocompleteWidgetWrapper(formfield.widget, db_field.rel,
+                            AutocompleteWidgetWrapper(formfield.widget, db_field.rel,
                                                   self.admin_site)
             return formfield
 
@@ -327,18 +319,16 @@ class AutocompleteModelAdmin(admin.ModelAdmin):
             db_field.help_text = ''
 
             # extra HTML to the end of the rendered output.
-            if 'request' in kwargs.keys():
+            if 'request' in kwargs:
                 kwargs.pop('request')
 
             formfield = db_field.formfield(**kwargs)
-            # Don't wrap raw_id fields.
-            # Their add function is in the popup window.
-            if db_field.name not in self.raw_id_fields:
                 # formfield can be None if it came from a OneToOneField with
                 # parent_link=True
-                if formfield is not None:
+            if formfield is not None:
+                if db_field.name not in self.raw_id_fields:
                     formfield.widget = \
-                        AutocompleteWidgetWrapper(formfield.widget, db_field.rel,
+                            AutocompleteWidgetWrapper(formfield.widget, db_field.rel,
                                                   self.admin_site)
             return formfield
 
@@ -352,35 +342,36 @@ class AutocompleteModelAdmin(admin.ModelAdmin):
         pk_value = obj._get_pk_val()
 
         msg = _('The %(name)s "%(obj)s" was added successfully.') % \
-            {'name': force_unicode(opts.verbose_name), 'obj': force_unicode(obj)}
+                {'name': force_unicode(opts.verbose_name), 'obj': force_unicode(obj)}
         # Here, we distinguish between different save types by checking for
         # the presence of keys in request.POST.
         if "_continue" in request.POST:
-            self.message_user(request, msg + ' ' + _("You may edit it again below."))
+            self.message_user(request, f'{msg} ' + _("You may edit it again below."))
             if "_popup" in request.POST:
-                post_url_continue += "?_popup=%s" % request.POST.get('_popup')
+                post_url_continue += f"?_popup={request.POST.get('_popup')}"
             return HttpResponseRedirect(post_url_continue % pk_value)
 
         if "_popup" in request.POST:
-            # htturn response to Autocomplete PopUp
-            if "_popup" in request.POST:
-                return HttpResponse('<script type="text/javascript">\
+            return HttpResponse('<script type="text/javascript">\
                     opener.dismissAutocompletePopup(window, "%s", "%s");</script>' %
-                                    (escape(pk_value), escape(obj)))
+                                (escape(pk_value), escape(obj)))
 
         elif "_addanother" in request.POST:
-            self.message_user(request, msg + ' ' + (_("You may add another %s below.") %
-                                                    force_unicode(opts.verbose_name)))
+            self.message_user(
+                request,
+                (
+                    f'{msg} '
+                    + _("You may add another %s below.")
+                    % force_unicode(opts.verbose_name)
+                ),
+            )
             return HttpResponseRedirect(request.path)
         else:
             self.message_user(request, msg)
             # Figure out where to redirect. If the user has change permission,
             # redirect to the change-list page for this object. Otherwise,
             # redirect to the admin index.
-            if self.has_change_permission(request, None):
-                post_url = '../'
-            else:
-                post_url = '../../../'
+            post_url = '../' if self.has_change_permission(request, None) else '../../../'
             return HttpResponseRedirect(post_url)
 
 
@@ -388,8 +379,7 @@ class AutocompleteWidgetWrapper(RelatedFieldWidgetWrapper):
 
     def render(self, name, value, *args, **kwargs):
         rel_to = self.rel.to
-        related_url = '../../../%s/%s/' % \
-            (rel_to._meta.app_label, rel_to._meta.object_name.lower())
+        related_url = f'../../../{rel_to._meta.app_label}/{rel_to._meta.object_name.lower()}/'
         self.widget.choices = self.choices
         output = [self.widget.render(name, value, *args, **kwargs)]
         if rel_to in self.admin_site._registry:
@@ -431,8 +421,9 @@ class RelatedFieldWidgetWrapperNew(RelatedFieldWidgetWrapper):
                 (related_url, name))
             output.append(u'<img src="%simg/icon_addlink.gif" width="10" height="10" alt="%s"/></a>' % (settings.ADMIN_MEDIA_PREFIX, _('Add Another')))
             """
-            output.append(u'<a href="%s" class="add-another" id="add_id_%s" onclick="return showAddAnotherPopup(this);"> ' %
-                          (related_url, name))
+            output.append(
+                f'<a href="{related_url}" class="add-another" id="add_id_{name}" onclick="return showAddAnotherPopup(this);"> '
+            )
             output.append(u'<img src="%simg/icon_addlink.gif" width="10" height="10" alt="%s"/></a>\
                 <div id="div_add_id_%s"></div>' %
                           (settings.ADMIN_MEDIA_PREFIX, _('Add Another'), name))

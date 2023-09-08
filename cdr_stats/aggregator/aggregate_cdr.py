@@ -23,10 +23,7 @@ def condition_switch_id(switch_id):
     """
     try:
         int_switch = int(switch_id)
-        if int_switch > 0:
-            return " AND switch_id=%d " % (int_switch)
-        else:
-            return ""
+        return " AND switch_id=%d " % (int_switch) if int_switch > 0 else ""
     except ValueError:
         return ""
 
@@ -49,10 +46,7 @@ def condition_user(user):
     """
     build where condition switch_id
     """
-    if not user or user.is_superuser:
-        return ""
-    else:
-        return " AND user_id=%d " % (user.id)
+    return "" if not user or user.is_superuser else " AND user_id=%d " % (user.id)
 
 
 sqlquery_aggr_cdr_hour = """
@@ -94,8 +88,8 @@ def custom_sql_matv_voip_cdr_aggr_last24hours(user, switch_id):
     perform query to retrieve last 24 hours of aggregate calls data
     """
     # build daterange for last 24 hours
-    start_date = datetime.today() - timedelta(hours=24)
-    end_date = datetime.today()
+    start_date = datetime.now() - timedelta(hours=24)
+    end_date = datetime.now()
 
     return custom_sql_matv_voip_cdr_aggr_hour(user, switch_id, start_date, end_date)
 
@@ -165,8 +159,8 @@ def custom_sql_aggr_top_country_last24hours(user, switch_id, limit=5):
     perform query to retrieve last 24 hours of aggregate calls data
     """
     # build daterange for last 24 hours
-    start_date = datetime.today() - timedelta(hours=24)
-    end_date = datetime.today()
+    start_date = datetime.now() - timedelta(hours=24)
+    end_date = datetime.now()
 
     return custom_sql_aggr_top_country(user, switch_id, limit, start_date, end_date)
 
@@ -187,15 +181,17 @@ def custom_sql_aggr_top_country(user, switch_id, limit, start_date, end_date):
             }
         cursor.execute(sqlquery, params)
         rows = cursor.fetchall()
-        for row in rows:
-            result.append({
+        result.extend(
+            {
                 "country_id": row[0],
                 "duration": row[1],
                 "billsec": row[2],
                 "nbcalls": row[3],
                 "buy_cost": row[4],
                 "sell_cost": row[5],
-            })
+            }
+            for row in rows
+        )
     return result
 
 
@@ -264,8 +260,8 @@ def custom_sql_aggr_top_hangup_last24hours(user, switch_id, limit=10):
     perform query to retrieve last 24 hours of aggregate calls data
     """
     # build daterange for last 24 hours
-    start_date = datetime.today() - timedelta(hours=24)
-    end_date = datetime.today()
+    start_date = datetime.now() - timedelta(hours=24)
+    end_date = datetime.now()
     hangup_cause_id = False
 
     (result, total_calls, total_duration, total_billsec, total_buy_cost, total_sell_cost) = \

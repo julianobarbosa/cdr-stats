@@ -27,20 +27,19 @@ def cust_password_reset(request):
     This method sends an e-mail to the user's email-id which is entered in
     ``password_reset_form``
     """
-    if not request.user.is_authenticated():
-        data = {
-            'loginform': LoginForm(),
-            'forgotform': ForgotForm(request.POST or None),
-        }
-        return password_reset(
-            request,
-            template_name='mod_registration/password_reset_form.html',
-            email_template_name='mod_registration/password_reset_email.html',
-            post_reset_redirect='/password_reset/done/',
-            from_email=settings.EMAIL_ADMIN,
-            extra_context=data)
-    else:
+    if request.user.is_authenticated():
         return HttpResponseRedirect("/")
+    data = {
+        'loginform': LoginForm(),
+        'forgotform': ForgotForm(request.POST or None),
+    }
+    return password_reset(
+        request,
+        template_name='mod_registration/password_reset_form.html',
+        email_template_name='mod_registration/password_reset_email.html',
+        post_reset_redirect='/password_reset/done/',
+        from_email=settings.EMAIL_ADMIN,
+        extra_context=data)
 
 
 def cust_password_reset_done(request):
@@ -50,14 +49,13 @@ def cust_password_reset_done(request):
     This will show a message to the user who is seeking to reset their
     password.
     """
-    if not request.user.is_authenticated():
-        data = {
-            'loginform': LoginForm(),
-            'forgotform': ForgotForm(),
-        }
-        return password_reset_done(request, template_name='mod_registration/password_reset_done.html', extra_context=data)
-    else:
+    if request.user.is_authenticated():
         return HttpResponseRedirect("/")
+    data = {
+        'loginform': LoginForm(),
+        'forgotform': ForgotForm(),
+    }
+    return password_reset_done(request, template_name='mod_registration/password_reset_done.html', extra_context=data)
 
 
 def cust_password_reset_confirm(request, uidb64=None, token=None):
@@ -87,10 +85,9 @@ def cust_password_reset_complete(request):
     This shows an acknowledgement to the user after successfully resetting
     their password for the system.
     """
-    if not request.user.is_authenticated():
-        data = {'loginform': LoginForm()}
-        return password_reset_complete(
-            request, template_name='mod_registration/password_reset_complete.html',
-            extra_context=data)
-    else:
+    if request.user.is_authenticated():
         return HttpResponseRedirect("/")
+    data = {'loginform': LoginForm()}
+    return password_reset_complete(
+        request, template_name='mod_registration/password_reset_complete.html',
+        extra_context=data)

@@ -28,9 +28,7 @@ from cdr.functions_def import get_hangupcause_name,\
 from cdr.templatetags.cdr_tags import hangupcause_name_with_title
 from datetime import datetime
 
-csv_file = open(
-    settings.APPLICATION_DIR + '/cdr/fixtures/import_cdr.txt', 'r'
-)
+csv_file = open(f'{settings.APPLICATION_DIR}/cdr/fixtures/import_cdr.txt', 'r')
 
 
 class CdrAdminInterfaceTestCase(BaseAuthenticatedClient):
@@ -163,7 +161,7 @@ class CdrStatsCustomerInterfaceTestCase(BaseAuthenticatedClient):
         response = cdr_view(request)
         self.assertEqual(response.status_code, 200)
 
-        now = datetime.today()
+        now = datetime.now()
         start_date = datetime(now.year, now.month, 1, 0, 0, 0, 0)
         end_date = datetime(now.year, now.month, now.day, 23, 59, 59, 99999)
         request.session['query_var'] = {

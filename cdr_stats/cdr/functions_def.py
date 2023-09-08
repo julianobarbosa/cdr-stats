@@ -25,9 +25,9 @@ import math
 
 def convert_to_minute(value):
     """convert to min"""
-    min = int(int(value) / 60)
+    min = int(value) // 60
     sec = int(int(value) % 60)
-    return round(float(str(min) + "." + str(sec)), 2)
+    return round(float(f"{str(min)}.{sec}"), 2)
 
 
 def get_switch_ip_addr(id):
@@ -55,7 +55,6 @@ def get_switch_list():
 def get_country_list():
     """Country list used in form"""
     return ((l.id, l.countryname) for l in Country.objects.all())
-    return ()
 
 
 @cached(3600)
@@ -127,7 +126,7 @@ def remove_prefix(phonenumber, removeprefix_list):
             rprefix = rprefix.strip(' \t\n\r')
             rprefix = re.sub("\+", "\\\+", rprefix)
             if rprefix and len(rprefix) > 0:
-                phonenumber = re.sub('^%s' % rprefix, '', phonenumber)
+                phonenumber = re.sub(f'^{rprefix}', '', phonenumber)
     return phonenumber
 
 
@@ -151,7 +150,7 @@ def prefix_list_string(dest_number):
     # Extra number, this is used in case phonenumber is followed by chars
     # ie 34650123456*234
     dest_number = str(dest_number)
-    if len(dest_number) > 0 and dest_number[0] == '+':
+    if dest_number != "" and dest_number[0] == '+':
         dest_number = dest_number[1:]
 
     m = re.search('(\d*)', dest_number)
@@ -165,9 +164,9 @@ def prefix_list_string(dest_number):
     destination_prefix_list = ''
     for i in prefix_range:
         if i == settings.PREFIX_LIMIT_MIN:
-            destination_prefix_list = destination_prefix_list + dest_number[0:i]
+            destination_prefix_list = destination_prefix_list + dest_number[:i]
         else:
-            destination_prefix_list = destination_prefix_list + dest_number[0:i] + ', '
+            destination_prefix_list = destination_prefix_list + dest_number[:i] + ', '
     return str(destination_prefix_list)
 
 
@@ -205,17 +204,16 @@ def get_dialcode(destination_number, dialcode):
     """
     if dialcode and len(dialcode) > 0:
         return dialcode
-    else:
-        # remove prefix
-        sanitized_destination = remove_prefix(destination_number, settings.PREFIX_TO_IGNORE)
-        prefix_list = prefix_list_string(sanitized_destination)
+    # remove prefix
+    sanitized_destination = remove_prefix(destination_number, settings.PREFIX_TO_IGNORE)
+    prefix_list = prefix_list_string(sanitized_destination)
 
-        if prefix_list and len(sanitized_destination) > settings.PN_MAX_DIGITS and not sanitized_destination[:1].isalpha():
-            # International call
-            (country_id, prefix_id) = get_country_id_prefix(prefix_list)
-            dialcode = prefix_id
-        else:
-            dialcode = ''
+    if prefix_list and len(sanitized_destination) > settings.PN_MAX_DIGITS and not sanitized_destination[:1].isalpha():
+        # International call
+        (country_id, prefix_id) = get_country_id_prefix(prefix_list)
+        dialcode = prefix_id
+    else:
+        dialcode = ''
     return dialcode
 
 
@@ -236,10 +234,7 @@ def get_country_name(id, type=''):
         obj = Country.objects.get(pk=id)
         if type == 'iso2':
             return str(obj.iso2).lower()
-        if type == 'iso3':
-            return str(obj.countrycode).lower()
-        else:
-            return obj.countryname
+        return str(obj.countrycode).lower() if type == 'iso3' else obj.countryname
     except:
         return _('unknown')
 
@@ -253,7 +248,7 @@ def chk_date_for_hrs(previous_date, graph_date):
     >>> chk_date_for_hrs(graph_date)
     False
     """
-    return True if graph_date > previous_date else False
+    return graph_date > previous_date
 
 
 def calculate_act_acd(total_calls, total_duration):

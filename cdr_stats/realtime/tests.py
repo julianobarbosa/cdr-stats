@@ -29,9 +29,7 @@ from cdr.templatetags.cdr_tags import hangupcause_name_with_title, mongo_id
 from bson.objectid import ObjectId
 from datetime import datetime
 
-csv_file = open(
-    settings.APPLICATION_DIR + '/cdr/fixtures/import_cdr.txt', 'r'
-)
+csv_file = open(f'{settings.APPLICATION_DIR}/cdr/fixtures/import_cdr.txt', 'r')
 
 
 class CdrStatsCustomerInterfaceTestCase(BaseAuthenticatedClient):

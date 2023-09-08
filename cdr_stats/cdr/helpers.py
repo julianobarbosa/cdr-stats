@@ -101,7 +101,7 @@ def get_cdr_mail_report(user):
     # Calculate the Average Time of Call
     metric_aggr = calculate_act_acd(total_calls, total_duration)
 
-    mail_data = {
+    return {
         'yesterday_date': start_date,
         'rows': cdrs,
         'total_duration': total_duration,
@@ -112,4 +112,3 @@ def get_cdr_mail_report(user):
         'country_data': country_data,
         'hangup_cause_data': hangup_cause_data,
     }
-    return mail_data

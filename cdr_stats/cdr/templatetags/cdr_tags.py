@@ -61,9 +61,7 @@ def get_cost(rate, billsec):
 @register.simple_tag(name='cdr_details')
 def cdr_details(cdr_id):
     """Create link to get cdr detail"""
-    link = '<a href="#cdr-detail"  url="/cdr_detail/%s" class="cdr-detail" data-toggle="modal" data-controls-modal="cdr-detail" title="%s"><i class="fa fa-search"></i></a>' \
-           % (cdr_id, _('cdr detail').capitalize())
-    return link
+    return f"""<a href="#cdr-detail"  url="/cdr_detail/{cdr_id}" class="cdr-detail" data-toggle="modal" data-controls-modal="cdr-detail" title="{_('cdr detail').capitalize()}"><i class="fa fa-search"></i></a>"""
 
 
 @register.filter('json')

@@ -45,7 +45,7 @@ def cdr_concurrent_calls(request):
         current date
     """
     logging.debug('CDR concurrent view start')
-    now = datetime.today()
+    now = datetime.now()
     from_date = now.strftime('%Y-%m-%d')
     start_date = datetime(now.year, now.month, now.day, 0, 0, 0, 0)
     end_date = datetime(now.year, now.month, now.day, 23, 59, 59, 0)
@@ -72,7 +72,6 @@ def cdr_concurrent_calls(request):
         query_var['accountcode'] = request.user.userprofile.accountcode
 
     xdata = []
-    charttype = "stackedAreaChart"
     call_count_res = defaultdict(list)
 
     if query_var:
@@ -86,17 +85,15 @@ def cdr_concurrent_calls(request):
             xdata.append(str(tsint))
             call_count_res[d['switch_id']].append(d['numbercall'])
 
-        int_count = 1
         chartdata = {'x': xdata}
         extra_serie = {"tooltip": {"y_start": "", "y_end": " concurrent calls"},
                        "date_format": "%d %b %Y %I:%M:%S %p"}
-        for i in call_count_res:
-            chartdata['name' + str(int_count)] = str(get_switch_ip_addr(i))
-            chartdata['y' + str(int_count)] = call_count_res[i]
-            chartdata['extra' + str(int_count)] = extra_serie
-            int_count += 1
-
+        for int_count, i in enumerate(call_count_res, start=1):
+            chartdata[f'name{str(int_count)}'] = str(get_switch_ip_addr(i))
+            chartdata[f'y{str(int_count)}'] = call_count_res[i]
+            chartdata[f'extra{str(int_count)}'] = extra_serie
         logging.debug('CDR concurrent view end')
+        charttype = "stackedAreaChart"
         data = {
             'form': form,
             'start_date': start_date,

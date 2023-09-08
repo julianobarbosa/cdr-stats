@@ -110,9 +110,7 @@ def verify_auth_dest_number(destination_number):
         # It might be an extension
         country_id = None
         prefix_id = None
-    elif (prefix_list
-          and len(sanitized_destination) >= settings.PN_MIN_DIGITS
-          and len(sanitized_destination) <= settings.PN_MAX_DIGITS):
+    elif prefix_list and len(sanitized_destination) <= settings.PN_MAX_DIGITS:
         # It might be an local call
         # Need to add coma for get_country_id_prefix to eval correctly
         prefix_list = prefix_list_string(str(settings.LOCAL_DIALCODE) + sanitized_destination)
@@ -121,9 +119,8 @@ def verify_auth_dest_number(destination_number):
         # International call
         (country_id, prefix_id) = get_country_id_prefix(prefix_list)
 
-    destination_data = {
+    return {
         'authorized': authorized,
         'country_id': country_id,
         'prefix_id': prefix_id,
     }
-    return destination_data

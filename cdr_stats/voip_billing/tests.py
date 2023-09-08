@@ -141,31 +141,34 @@ class VoipBillingCustomerInterfaceTestCase(BaseAuthenticatedClient):
 
     def test_rebilling(self):
         """Test task : RebillingTask"""
-        tday = datetime.today()
+        tday = datetime.now()
         voipplan_id = 1
         end_date = datetime(tday.year, tday.month, tday.day,
                             tday.hour, tday.minute, tday.second, tday.microsecond)
         start_date = end_date + relativedelta(days=-1)
-        call_kwargs = {}
-        call_kwargs['start_uepoch'] = {'$gte': start_date, '$lt': end_date}
+        call_kwargs = {'start_uepoch': {'$gte': start_date, '$lt': end_date}}
         result = RebillingTask.delay(call_kwargs, voipplan_id)
         #self.assertEqual(result.get(), True)
 
     def test_reaggregate(self):
         """Test task : ReaggregateTask"""
-        call_kwargs = {}
-        daily_query_var = {}
-        monthly_query_var = {}
-
-        tday = datetime.today()
+        tday = datetime.now()
         end_date = datetime(tday.year, tday.month, tday.day,
                             tday.hour, tday.minute, tday.second, tday.microsecond)
         start_date = end_date + relativedelta(days=-1)
 
-        call_kwargs['start_uepoch'] = {'$gte': start_date, '$lt': end_date}
-        daily_query_var['metadata.date'] = {'$gte': start_date.strftime('%Y-%m-%d'),
-                                            '$lt': end_date.strftime('%Y-%m-%d')}
-        monthly_query_var['metadata.date'] = {'$gte': start_date.strftime('%Y-%m'),
-                                              '$lt': end_date.strftime('%Y-%m')}
+        call_kwargs = {'start_uepoch': {'$gte': start_date, '$lt': end_date}}
+        daily_query_var = {
+            'metadata.date': {
+                '$gte': start_date.strftime('%Y-%m-%d'),
+                '$lt': end_date.strftime('%Y-%m-%d'),
+            }
+        }
+        monthly_query_var = {
+            'metadata.date': {
+                '$gte': start_date.strftime('%Y-%m'),
+                '$lt': end_date.strftime('%Y-%m'),
+            }
+        }
         result = ReaggregateTask.delay(daily_query_var, monthly_query_var, call_kwargs)
         #self.assertEqual(result.get(), True)

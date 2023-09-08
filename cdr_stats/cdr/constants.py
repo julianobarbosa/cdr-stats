@@ -69,5 +69,5 @@ CDR_FIELD_LIST = (
 )
 
 CDR_FIELD_LIST_NUM = [
-    (x, 'column-' + str(x)) for x in range(1, len(CDR_FIELD_LIST) + 1)
+    (x, f'column-{str(x)}') for x in range(1, len(CDR_FIELD_LIST) + 1)
 ]

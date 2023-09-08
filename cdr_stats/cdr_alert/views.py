@@ -112,12 +112,12 @@ def alarm_test(request, object_id):
 
     alarm_data = run_alarm(alarm_obj, logging)
     if alarm_data['current_value'] is not None and alarm_data['previous_value'] is not None:
-        if (alarm_obj.alert_condition != ALERT_CONDITION.IS_LESS_THAN or
-                alarm_obj.alert_condition != ALERT_CONDITION.IS_GREATER_THAN):
-            alarm_data['diff'] = round(abs(alarm_data['current_value'] - alarm_data['previous_value']), 2)
+        alarm_data['diff'] = round(abs(alarm_data['current_value'] - alarm_data['previous_value']), 2)
 
-        if (alarm_obj.alert_condition == ALERT_CONDITION.PERCENTAGE_DECREASE_BY_MORE_THAN or
-                alarm_obj.alert_condition == ALERT_CONDITION.PERCENTAGE_INCREASE_BY_MORE_THAN):
+        if alarm_obj.alert_condition in [
+            ALERT_CONDITION.PERCENTAGE_DECREASE_BY_MORE_THAN,
+            ALERT_CONDITION.PERCENTAGE_INCREASE_BY_MORE_THAN,
+        ]:
             avg = (alarm_data['current_value'] + alarm_data['previous_value']) / 2
             avg = avg if avg != 0 else 1
             alarm_data['percentage'] = round(alarm_data['diff'] / avg * 100, 2)
@@ -155,11 +155,11 @@ def alarm_del(request, object_id):
     else:
         # When object_id is 0 (Multiple records delete)
         values = request.POST.getlist('select')
-        values = ", ".join(["%s" % el for el in values])
+        values = ", ".join([f"{el}" for el in values])
         try:
-            # 1) delete alarm
-            alarm_list = Alarm.objects.filter(user=request.user).extra(where=['id IN (%s)' % values])
-            if alarm_list:
+            if alarm_list := Alarm.objects.filter(user=request.user).extra(
+                where=[f'id IN ({values})']
+            ):
                 request.session["msg"] = _('%(count)s alarm(s) are deleted.') % {'count': alarm_list.count()}
                 alarm_list.delete()
         except:
@@ -204,7 +204,7 @@ def alarm_change(request, object_id):
 
 def last_seven_days_report(request, kwargs):
     comp_days = 7
-    from_date = datetime.today()
+    from_date = datetime.now()
     from_day = validate_days(from_date.year, from_date.month, from_date.day)
     end_date = datetime(from_date.year, from_date.month, from_day)
     start_date = end_date + relativedelta(days=-comp_days)
@@ -227,8 +227,9 @@ def last_seven_days_report(request, kwargs):
     chartdata = {"x": []}
     for doc in alarm_data:
         daterun = str(doc['daterun'])
-        graph_day = datetime(int(daterun[0:4]), int(daterun[5:7]), int(daterun[8:10]),
-                             0, 0, 0, 0)
+        graph_day = datetime(
+            int(daterun[:4]), int(daterun[5:7]), int(daterun[8:10]), 0, 0, 0, 0
+        )
         dt = int(1000 * time.mktime(graph_day.timetuple()))
 
         if dt in total_data:
@@ -254,7 +255,7 @@ def last_seven_days_report(request, kwargs):
         'name1': 'Alert', 'y1': ydata, 'extra1': extra_serie,
     }
 
-    data = {
+    return {
         'start_date': start_date,
         'end_date': end_date,
         'total_data': total_data,
@@ -262,7 +263,6 @@ def last_seven_days_report(request, kwargs):
         'charttype': charttype,
         'chartdata': chartdata,
     }
-    return data
 
 
 @permission_required('cdr_alert.alarm_report', login_url='/')

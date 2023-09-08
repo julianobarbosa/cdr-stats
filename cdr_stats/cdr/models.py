@@ -81,7 +81,7 @@ class HangupCauseManager(models.Manager):
             if len(l.enumeration) > 0:
                 result.append((l.id, l.enumeration))
             else:
-                result.append((l.id, l.cause[:25].upper() + '...'))
+                result.append((l.id, f'{l.cause[:25].upper()}...'))
         return result
 
 
@@ -109,7 +109,7 @@ class HangupCause(caching.base.CachingMixin, models.Model):
     objects = HangupCauseManager()
 
     def __unicode__(self):
-        return '[%s] %s' % (self.code, self.enumeration)
+        return f'[{self.code}] {self.enumeration}'
 
     def listall(self):
         result = []
@@ -117,7 +117,7 @@ class HangupCause(caching.base.CachingMixin, models.Model):
             if len(l.enumeration) > 0:
                 result.append((l.id, l.enumeration))
             else:
-                result.append((l.id, l.cause[:25].upper() + '...'))
+                result.append((l.id, f'{l.cause[:25].upper()}...'))
         return result
 
     class Meta:
@@ -211,23 +211,22 @@ class CDR(models.Model):
         verbose_name_plural = _("Calls")
 
     def __unicode__(self):
-        return u"id:%d - dst:%s - %s" % (self.id, self.destination_number, str(self.starting_date)[0:16])
+        return u"id:%d - dst:%s - %s" % (
+            self.id,
+            self.destination_number,
+            str(self.starting_date)[:16],
+        )
 
     def destination_name(self):
         """Return Recipient dialcode"""
-        if self.dialcode is None:
-            return "0"
-        else:
-            return self.dialcode.name
+        return "0" if self.dialcode is None else self.dialcode.name
 
     def min_duration(self):
         """Return duration in min & sec"""
-        if self.duration:
-            min = int(self.duration / 60)
-            sec = int(self.duration % 60)
-            return "%02d:%02d" % (min, sec)
-        else:
+        if not self.duration:
             return "00:00"
+        min = int(self.duration / 60)
+        return "%02d:%02d" % (min, int(self.duration % 60))
 
     @classmethod
     def generate_fake_cdr(cls, day_delta_int):
@@ -289,22 +288,22 @@ class CDR(models.Model):
         delta_minutes = random.randint(1, 1440)
 
         answer_stamp = datetime.datetime.now() \
-            - datetime.timedelta(minutes=delta_minutes) \
-            - datetime.timedelta(days=delta_days)
+                - datetime.timedelta(minutes=delta_minutes) \
+                - datetime.timedelta(days=delta_days)
 
         # convert answer_stamp into milliseconds
         start_uepoch = int(time.mktime(answer_stamp.timetuple()))
 
-        caller_id = ''.join([random.choice(string.digits) for i in range(8)])
-        channel_name = 'sofia/internal/' + caller_id + '@127.0.0.1'
-        destination_number = ''.join([random.choice(string.digits) for i in range(8)])
+        caller_id = ''.join([random.choice(string.digits) for _ in range(8)])
+        channel_name = f'sofia/internal/{caller_id}@127.0.0.1'
+        destination_number = ''.join([random.choice(string.digits) for _ in range(8)])
 
         if random.randint(1, 20) == 1:
             # Add local calls
             dialcode = None
             country_id = None
             authorized = 1
-            destination_number = ''.join([random.choice(string.digits) for i in range(5)])
+            destination_number = ''.join([random.choice(string.digits) for _ in range(5)])
         else:
             # International calls
             destination_number = random.choice(COUNTRY_PREFIX) + destination_number

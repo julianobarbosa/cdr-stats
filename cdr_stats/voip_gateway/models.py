@@ -77,7 +77,7 @@ class Gateway(Model):
         verbose_name_plural = _("gateways")
 
     def __unicode__(self):
-        return u"%s" % self.name
+        return f"{self.name}"
 
 
 class Provider(Model):
@@ -114,4 +114,4 @@ class Provider(Model):
         verbose_name_plural = _("providers")
 
     def __unicode__(self):
-        return u"%s" % self.name
+        return f"{self.name}"

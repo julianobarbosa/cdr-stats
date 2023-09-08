@@ -34,16 +34,9 @@ def check_connection_sql():
     try:
         cursor = connections['import_cdr'].cursor()
         cursor.execute("SELECT 1 FROM cdr_import")
-        row = cursor.fetchone()
-        if row:
-            return row[0] == 1
-        else:
-            return True
-    except OperationalError:
+        return row[0] == 1 if (row := cursor.fetchone()) else True
+    except (OperationalError, ProgrammingError):
         # Error Connection to CDR-Pusher
-        return False
-    except ProgrammingError:
-        # Error Running SQL on CDR-Pusher
         return False
     except:
         raise
@@ -73,7 +66,7 @@ def bulk_create_cdrs(list_newcdr, list_cdrid):
     # Bulk Insert the new CDRs
     CDR.objects.bulk_create(list_newcdr)
     # Update the imported CDRs
-    update_cdr = "UPDATE cdr_import SET imported=True WHERE id in (%s)" % ", ".join(list_cdrid)
+    update_cdr = f'UPDATE cdr_import SET imported=True WHERE id in ({", ".join(list_cdrid)})'
     cursor = connections['import_cdr'].cursor()
     cursor.execute(update_cdr)
 
@@ -124,11 +117,7 @@ def import_cdr(shell=False, logger=False):
             call_type = CALL_TYPE.INTERNATIONAL
 
         # Sanitize direction
-        if call.direction:
-            direction = call.direction
-        else:
-            direction = CALL_DIRECTION.NOTDEFINED
-
+        direction = call.direction if call.direction else CALL_DIRECTION.NOTDEFINED
         # Find the user for given accountcode
         try:
             user = AccountCode.objects.get(accountcode=call.accountcode).user
@@ -147,7 +136,10 @@ def import_cdr(shell=False, logger=False):
             voipplan_id = user_profile.voipplan_id
         else:
             voipplan_id = False
-            print_shell(shell, "VoipPlan doesn't exist for this user/accountcode (%s)" % call.accountcode)
+            print_shell(
+                shell,
+                f"VoipPlan doesn't exist for this user/accountcode ({call.accountcode})",
+            )
 
         if call.buy_rate or call.buy_cost or call.sell_rate or call.sell_cost:
             buy_rate = call.buy_rate
@@ -165,8 +157,11 @@ def import_cdr(shell=False, logger=False):
 
         hangup_cause_id = get_hangupcause_id(call.hangup_cause_id)
 
-        log_print(logger, shell, "Create new CDR -> date:%s - dst:%s - duration:%s - hangup_cause:%s - sell_cost:%s" %
-                  (call.starting_date, call.destination_number, str(call.duration), str(hangup_cause_id), str(call.sell_cost)))
+        log_print(
+            logger,
+            shell,
+            f"Create new CDR -> date:{call.starting_date} - dst:{call.destination_number} - duration:{str(call.duration)} - hangup_cause:{str(hangup_cause_id)} - sell_cost:{str(call.sell_cost)}",
+        )
 
         # Create the new CDR
         newCDR = CDR(

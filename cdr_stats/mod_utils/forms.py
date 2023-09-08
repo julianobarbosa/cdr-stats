@@ -63,43 +63,46 @@ def common_submit_buttons(layout_section=None, default_action='add'):
     """
     function to remove the first button and add update and delete button
     """
-    start_div = '<div class="row"><div class="col-md-12 text-right">'
     end_div = '</div></div>'
+    start_div = '<div class="row"><div class="col-md-12 text-right">'
     if default_action == 'update':
         form_action = FormActions(
-            HTML('%s<button type="submit" id="update" name="update" class="btn btn-primary" value="submit">'
-                 '<i class="fa fa-edit fa-lg"></i> %s</button>'
-                 '<button type="submit" id="delete" name="delete" class="btn btn-danger" value="submit">'
-                 '<i class="fa fa-trash-o fa-lg"></i> %s</button>%s' % (start_div, _('update').title(), _('delete').title(), end_div))
+            HTML(
+                f"""{start_div}<button type="submit" id="update" name="update" class="btn btn-primary" value="submit"><i class="fa fa-edit fa-lg"></i> {_('update').title()}</button><button type="submit" id="delete" name="delete" class="btn btn-danger" value="submit"><i class="fa fa-trash-o fa-lg"></i> {_('delete').title()}</button>{end_div}"""
+            )
         )
         if layout_section is None:
             return form_action
         layout_section.append(form_action)
     elif default_action == 'add':
         form_action = FormActions(
-            HTML('%s<button type="submit" id="add" name="add" class="btn btn-primary" value="submit">'
-                 '<i class="fa fa-save fa-lg"></i> %s</button>%s' % (start_div, _('save').title(), end_div)
-                 ),
+            HTML(
+                f"""{start_div}<button type="submit" id="add" name="add" class="btn btn-primary" value="submit"><i class="fa fa-save fa-lg"></i> {_('save').title()}</button>{end_div}"""
+            )
         )
         if layout_section is None:
             return form_action
         layout_section.append(form_action)
     elif default_action == 'import':
         form_action = FormActions(
-            HTML('%s<button type="submit" id="add" name="add" class="btn btn-primary" value="submit">'
-                 '<i class="fa fa-save fa-lg"></i> %s</button>%s' % (start_div, _('import').title(), end_div)
-                 ),
+            HTML(
+                f"""{start_div}<button type="submit" id="add" name="add" class="btn btn-primary" value="submit"><i class="fa fa-save fa-lg"></i> {_('import').title()}</button>{end_div}"""
+            )
         )
         layout_section.append(form_action)
     elif default_action == 'search':
         start_div = '<div class="row"><div class="col-md-12 text-left">'
         form_action = FormActions(
-            HTML('%s<button type="submit" id="id_submit" name="submit" class="btn btn-primary" value="submit">'
-                 '<i class="fa fa-search fa-lg"></i> %s</button>%s' % (start_div, _('search').title(), end_div)
-                 )
+            HTML(
+                f"""{start_div}<button type="submit" id="id_submit" name="submit" class="btn btn-primary" value="submit"><i class="fa fa-search fa-lg"></i> {_('search').title()}</button>{end_div}"""
+            )
         )
         layout_section.append(form_action)
     elif default_action == 'reset-rate':
-        form_action = FormActions(HTML("""<a href="/rates/" class="btn btn-danger"><i class="fa fa-trash-o fa-lg"></i> %s</a>""" % _('clear').title()))
+        form_action = FormActions(
+            HTML(
+                f"""<a href="/rates/" class="btn btn-danger"><i class="fa fa-trash-o fa-lg"></i> {_('clear').title()}</a>"""
+            )
+        )
         layout_section.append(form_action)
     return layout_section

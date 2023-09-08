@@ -39,7 +39,7 @@ class AlertRemovePrefix(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return '%s' % (self.label)
+        return f'{self.label}'
 
     class Meta:
         verbose_name = _("alert remove prefix")
@@ -83,7 +83,7 @@ class Alarm(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return '%s' % (self.name)
+        return f'{self.name}'
 
     class Meta:
         permissions = (
@@ -115,7 +115,7 @@ class AlarmReport(models.Model):
     daterun = models.DateTimeField(auto_now_add=True, verbose_name=_('date'))
 
     def __unicode__(self):
-        return '%s' % (self.alarm)
+        return f'{self.alarm}'
 
     class Meta:
         permissions = (
@@ -144,7 +144,7 @@ class Blacklist(models.Model):
                                 help_text=_("select country"))
 
     def __unicode__(self):
-        return '[%s] %s' % (self.id, self.phonenumber_prefix)
+        return f'[{self.id}] {self.phonenumber_prefix}'
 
     class Meta:
         permissions = (
@@ -173,7 +173,7 @@ class Whitelist(models.Model):
                                 help_text=_("select country"))
 
     def __unicode__(self):
-        return '[%s] %s' % (self.id, self.phonenumber_prefix)
+        return f'[{self.id}] {self.phonenumber_prefix}'
 
     class Meta:
         permissions = (

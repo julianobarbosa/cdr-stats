@@ -50,18 +50,19 @@ def get_start_end_date(alert_condition_add_on):
         * c_start_date
         * c_end_date
     """
-    date_dict = {}
     # yesterday's date
-    end_date = datetime.today() + relativedelta(days=-1)
+    end_date = datetime.now() + relativedelta(days=-1)
     if alert_condition_add_on == ALERT_CONDITION_ADD_ON.SAME_DAY:  # Same day
         compare_days = 1
     if alert_condition_add_on == ALERT_CONDITION_ADD_ON.SAME_DAY_IN_PRE_WEEK:  # Same day in the previous week
         compare_days = 7
 
     start_date = end_date + relativedelta(days=-int(compare_days))
-    # get Previous dates and Current dates
-    date_dict['p_start_date'] = datetime(start_date.year, start_date.month,
-                                       start_date.day, 0, 0, 0, 0)
+    date_dict = {
+        'p_start_date': datetime(
+            start_date.year, start_date.month, start_date.day, 0, 0, 0, 0
+        )
+    }
     date_dict['p_end_date'] = datetime(start_date.year, start_date.month,
                                      start_date.day, 23, 59, 59, 999999)
     date_dict['c_start_date'] = datetime(end_date.year, end_date.month,
@@ -205,8 +206,10 @@ def run_alarm(alarm_obj, logger):
         total_duration = daily_data["duration"]["total"]
         ACD = math.floor(total_duration / total_calls)
 
-        if alarm_obj.alert_condition == ALERT_CONDITION.IS_LESS_THAN or \
-                alarm_obj.alert_condition == ALERT_CONDITION.IS_GREATER_THAN:
+        if alarm_obj.alert_condition in [
+            ALERT_CONDITION.IS_LESS_THAN,
+            ALERT_CONDITION.IS_GREATER_THAN,
+        ]:
             running_alarm_test_data['previous_value'] = ACD
             chk_alert_value(alarm_obj, ACD)
         else:
@@ -222,8 +225,10 @@ def run_alarm(alarm_obj, logger):
         total_duration = daily_data["duration"]["total"]
         ACD = math.floor(total_duration / total_calls)
 
-        if alarm_obj.alert_condition == ALERT_CONDITION.IS_LESS_THAN or \
-                alarm_obj.alert_condition == ALERT_CONDITION.IS_GREATER_THAN:
+        if alarm_obj.alert_condition in [
+            ALERT_CONDITION.IS_LESS_THAN,
+            ALERT_CONDITION.IS_GREATER_THAN,
+        ]:
             running_alarm_test_data['current_value'] = ACD
             chk_alert_value(alarm_obj, ACD)
         else:
@@ -262,8 +267,10 @@ def run_alarm(alarm_obj, logger):
         pre_total_record = 1 if pre_total_record == 0 else pre_total_record
         previous_asr = pre_total_answered_record / pre_total_record
 
-        if alarm_obj.alert_condition == ALERT_CONDITION.IS_LESS_THAN or \
-                alarm_obj.alert_condition == ALERT_CONDITION.IS_GREATER_THAN:
+        if alarm_obj.alert_condition in [
+            ALERT_CONDITION.IS_LESS_THAN,
+            ALERT_CONDITION.IS_GREATER_THAN,
+        ]:
             running_alarm_test_data['previous_value'] = previous_asr
             chk_alert_value(alarm_obj, previous_asr)
         else:
@@ -290,8 +297,10 @@ def run_alarm(alarm_obj, logger):
         cur_total_record = 1 if cur_total_record == 0 else cur_total_record
         current_asr = cur_total_answered_record / cur_total_record
 
-        if alarm_obj.alert_condition == ALERT_CONDITION.IS_LESS_THAN or \
-                alarm_obj.alert_condition == ALERT_CONDITION.IS_GREATER_THAN:
+        if alarm_obj.alert_condition in [
+            ALERT_CONDITION.IS_LESS_THAN,
+            ALERT_CONDITION.IS_GREATER_THAN,
+        ]:
             running_alarm_test_data['current_value'] = current_asr
             chk_alert_value(alarm_obj, current_asr)
         else:
@@ -320,27 +329,25 @@ class chk_alarm(PeriodicTask):
         logger.info('TASK :: chk_alarm called')
 
         alarm_objs = Alarm.objects.filter(status=1)  # all active alarms
-        alarm_status = {}
-        alarm_status['running_alarm_status'] = True
+        alarm_status = {'running_alarm_status': True}
         for alarm_obj in alarm_objs:
             try:
                 alarm_report = AlarmReport.objects.filter(alarm=alarm_obj).latest('daterun')
                 diff_run = (datetime.now() - alarm_report.daterun).days
                 diff_run = 1
-                if alarm_obj.period == PERIOD.DAY:  # Day
-                    if diff_run == 1:  # every day
-                        # Run alert task
-                        logger.debug('Run alarm')
-                        alarm_status = run_alarm(alarm_obj, logger)
+                if (
+                    diff_run == 1
+                    and alarm_obj.period == PERIOD.DAY
+                    or diff_run != 1
+                    and diff_run == 7
+                    and alarm_obj.period == PERIOD.WEEK
+                ):  # every day
+                    # Run alert task
+                    logger.debug('Run alarm')
+                    alarm_status = run_alarm(alarm_obj, logger)
 
-                if alarm_obj.period == PERIOD.WEEK:  # Week
-                    if diff_run == 7:  # every week
-                        # Run alert task
-                        logger.debug('Run alarm')
-                        alarm_status = run_alarm(alarm_obj, logger)
-
-                if alarm_obj.period == PERIOD.MONTH:  # Month
-                    if diff_run == 30:  # every month
+                if diff_run == 30:
+                    if alarm_obj.period == PERIOD.MONTH:  # every month
                         # Run alert task
                         logger.debug('Run alarm')
                         alarm_status = run_alarm(alarm_obj, logger)
@@ -361,7 +368,12 @@ def notify_admin_without_mail(notice_id, email_id):
         # send notification
         if notification:
             note_label = notification.NoticeType.objects.get(default=notice_id).label
-            notification.send([recipient], note_label, {'from_user': user}, sender=user)
+            notification.send(
+                [recipient],
+                note_label,
+                {'from_user': recipient},
+                sender=recipient,
+            )
     return True
 
 
@@ -381,7 +393,7 @@ def blacklist_whitelist_notification(notice_type):
         notice_type_name = 'whitelist'
 
     logger = blacklist_whitelist_notification.get_logger()
-    logger.info('TASK :: %s_notification called' % notice_type_name)
+    logger.info(f'TASK :: {notice_type_name}_notification called')
     notice_type_obj = notification.NoticeType.objects.get(default=notice_type)
     try:
         notice_obj = notification.Notice.objects.\
@@ -399,7 +411,7 @@ def blacklist_whitelist_notification(notice_type):
     except:
         # blacklist notification type - 3 | whitelist notification type - 4
         notify_admin_without_mail(notice_type, 'admin@localhost.com')
-    logger.debug('TASK :: %s_notification finished' % notice_type_name)
+    logger.debug(f'TASK :: {notice_type_name}_notification finished')
     return True
 
 
@@ -424,10 +436,10 @@ class send_cdr_report(PeriodicTask):
         for c_user in list_users:
 
             if not c_user.email:
-                logger.error("User (%s) -> This user doesn't have an email." % c_user.username)
+                logger.error(f"User ({c_user.username}) -> This user doesn't have an email.")
                 continue
             else:
-                logger.error("Send Report from User (%s - %s)." % (c_user.username, c_user.email))
+                logger.error(f"Send Report from User ({c_user.username} - {c_user.email}).")
 
             try:
                 to_email = UserProfile.objects.get(user=c_user).multiple_email
@@ -436,7 +448,9 @@ class send_cdr_report(PeriodicTask):
                 continue
 
             if not to_email:
-                logger.error('Error: UserProfile multiple_email not set (user_id:' + str(c_user.id) + ')')
+                logger.error(
+                    f'Error: UserProfile multiple_email not set (user_id:{str(c_user.id)})'
+                )
                 continue
 
             from_email = c_user.email
@@ -444,7 +458,7 @@ class send_cdr_report(PeriodicTask):
             subject = 'CDR Report'
 
             html_content = get_template('cdr/mail_report_template.html')\
-                .render(Context({
+                    .render(Context({
                     'yesterday_date': mail_data['yesterday_date'],
                     'rows': mail_data['rows'],
                     'total_duration': mail_data['total_duration'],
@@ -457,7 +471,7 @@ class send_cdr_report(PeriodicTask):
                 }))
 
             msg = EmailMultiAlternatives(subject, html_content, from_email, [to_email])
-            logger.info('Email sent to %s' % str(to_email))
+            logger.info(f'Email sent to {str(to_email)}')
             msg.content_subtype = 'html'
             msg.send()
 

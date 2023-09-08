@@ -7,13 +7,14 @@ Heavily based on
 http://blog.dscpl.com.au/2010/03/improved-wsgi-script-for-use-with.html
 """
 
+
 import glob
 import os.path
 import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-g = glob.glob(here + '/manage.py')
+g = glob.glob(f'{here}/manage.py')
 project_name = os.path.split(g[0])[0]
 
 site_package_dirs = '/usr/share/virtualenvs/cdr-stats/lib/python2.7/site-packages'

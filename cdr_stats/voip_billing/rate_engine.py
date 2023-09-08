@@ -33,13 +33,12 @@ def calculate_call_cost(voipplan_id, dest_number, billsec):
         buy_cost = buy_rate * float(billsec) / 60
         sell_cost = sell_rate * float(billsec) / 60
 
-    data = {
+    return {
         'buy_rate': buy_rate,
         'buy_cost': round(buy_cost, 4),
         'sell_rate': sell_rate,
         'sell_cost': round(sell_cost, 4),
     }
-    return data
 
 
 def rate_engine(voipplan_id, dest_number):

@@ -31,14 +31,12 @@ APPLICATION_DIR = os.path.dirname(globals()['__file__']) + '/../'
 
 DATABASES = {
     'default': {
-        # 'postgresql_psycopg2','postgresql','sqlite3','oracle', 'django.db.backends.mysql'
         'ENGINE': 'django.db.backends.sqlite3',
-        # Database name or path to database file if using sqlite3.
-        'NAME': APPLICATION_DIR + '/database/cdr_stats.db',
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Not used with sqlite3.
-        'PORT': '',                      # Not used with sqlite3.
+        'NAME': f'{APPLICATION_DIR}/database/cdr_stats.db',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     },
     'import_cdr': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -49,8 +47,8 @@ DATABASES = {
         'PORT': '5433',
         'OPTIONS': {
             'autocommit': True,
-        }
-    }
+        },
+    },
 }
 
 DATABASE_ROUTERS = ['import_cdr.router.CDRImportRouter']
@@ -104,7 +102,7 @@ USE_L10N = True
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = APPLICATION_DIR + "/static/"
+STATIC_ROOT = f"{APPLICATION_DIR}/static/"
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"

@@ -26,8 +26,7 @@ if "notification" in settings.INSTALLED_APPS:
     from notification import models as notification
 
     def create_notice_types(app, created_models, verbosity, **kwargs):
-        kwargs = {}
-        kwargs['default'] = NOTICE_TYPE.average_length_of_call
+        kwargs = {'default': NOTICE_TYPE.average_length_of_call}
         notification.create_notice_type("average_length_of_call",
                                         _("ALOC (average length of call)"),
                                         _("average length of call"), **kwargs)

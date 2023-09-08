@@ -35,19 +35,24 @@ def get_realtime_json(request, key_uuid):
         return False
 
     switch_id = switch.id
-    now = datetime.today()
+    now = datetime.now()
     key_date = "%d-%d-%d-%d-%d" % (now.year, now.month, now.day, now.hour, now.minute)
 
     if not request.user.is_superuser:
         accountcode = str(request.user.userprofile.accountcode)
-    elif (hasattr(request.user, 'userprofile') and request.user.userprofile.accountcode and request.user.is_superuser):
+    elif (
+        hasattr(request.user, 'userprofile')
+        and request.user.userprofile.accountcode
+    ):
         accountcode = str(request.user.userprofile.accountcode)
-    elif request.user.is_superuser:
+    else:
         accountcode = 'root'
 
     key = "%s-%d-%s" % (key_date, switch_id, str(accountcode))
     numbercall = cache.get(key)
-    logging.debug("key:%s, accountcode:%s, numbercall:%s" % (key, accountcode, str(numbercall)))
+    logging.debug(
+        f"key:{key}, accountcode:{accountcode}, numbercall:{str(numbercall)}"
+    )
 
     if not numbercall:
         numbercall = 0

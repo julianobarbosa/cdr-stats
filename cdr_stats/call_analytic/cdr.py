@@ -113,9 +113,7 @@ class InfluxdbHandler(object):
     def query_column_aggr_time_group(self, column='country_id', time_bucket='1h', past='15d', aggr='COUNT'):
         query = ("SELECT {0}({1}) FROM {2} GROUP BY {3}, time({4}) fill(0) "
                  "WHERE time > now() - {5}").format(aggr, column, self.serie_name, column, time_bucket, past)
-        result = self.query(query)
-        # print("Result: {0}".format(result))
-        return result
+        return self.query(query)
 
     def query_column_aggr_time(self, column='duration', time_bucket='1h', past='15d', aggr='MEAN'):
         """
@@ -123,9 +121,7 @@ class InfluxdbHandler(object):
         """
         query = ("SELECT {0}({1}) FROM {2} GROUP BY time({3}) fill(0) "
                  "WHERE time > now() - {4}").format(aggr, column, self.serie_name, time_bucket, past)
-        result = self.query(query)
-        # print("Result: {0}".format(result))
-        return result
+        return self.query(query)
 
 
 class InfluxdbHandlerCDR(InfluxdbHandler):

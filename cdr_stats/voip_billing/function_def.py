@@ -30,16 +30,16 @@ def rate_filter_range_field_chk(rate, rate_range, field_name):
     """
     kwargs = {}
     if rate_range != '' and rate != '':
-        if rate_range == 'gte':
-            kwargs[field_name + '__gte'] = rate
-        elif rate_range == 'gt':
-            kwargs[field_name + '__gt'] = rate
-        elif rate_range == 'eq':
+        if rate_range == 'eq':
             kwargs[field_name] = rate
+        elif rate_range == 'gt':
+            kwargs[f'{field_name}__gt'] = rate
+        elif rate_range == 'gte':
+            kwargs[f'{field_name}__gte'] = rate
         elif rate_range == 'lt':
-            kwargs[field_name + '__lt'] = rate
+            kwargs[f'{field_name}__lt'] = rate
         elif rate_range == 'lte':
-            kwargs[field_name + '__lte'] = rate
+            kwargs[f'{field_name}__lte'] = rate
     return kwargs
 
 
@@ -47,13 +47,14 @@ def get_list_rate_filter():
     """
     Return list of filter for the rate symbol
     """
-    choicelist = (('', 'All'),
-                  ('gte', '>='),
-                  ('gt', '>'),
-                  ('eq', '='),
-                  ('lt', '<'),
-                  ('lte', '<='))
-    return choicelist
+    return (
+        ('', 'All'),
+        ('gte', '>='),
+        ('gt', '>'),
+        ('eq', '='),
+        ('lt', '<'),
+        ('lte', '<='),
+    )
 
 
 def banned_prefix_qs(voipplan_id):
@@ -73,8 +74,7 @@ def banned_prefix_qs(voipplan_id):
     row = cursor.fetchall()
     result = []
     for record in row:
-        modrecord = {}
-        modrecord['prefix'] = record[0]
+        modrecord = {'prefix': record[0]}
         result.append(modrecord)
     return result
 
@@ -85,7 +85,7 @@ def prefix_allowed_to_call(destination_number, voipplan_id):
     """
     destination_prefix_list = prefix_list_string(destination_number)
     # Cache the voipplan_id & banned_prefix query set
-    cachekey = "banned_prefix_list_%s" % (str(voipplan_id))
+    cachekey = f"banned_prefix_list_{str(voipplan_id)}"
     banned_prefix_list = cache.get(cachekey)
     if banned_prefix_list is None:
         banned_prefix_list = banned_prefix_qs(voipplan_id)

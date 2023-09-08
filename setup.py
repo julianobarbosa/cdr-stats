@@ -31,20 +31,17 @@ def parse_requirements(file_name):
             continue
         if re.match(r'\s*-e\s+', line):
             requirements.append(re.sub(r'\s*-e\s+.*#egg=(.*)$', r'\1', line))
-        elif re.match(r'(\s*git)|(\s*hg)', line):
-            pass
-        else:
+        elif not re.match(r'(\s*git)|(\s*hg)', line):
             requirements.append(line)
     return requirements
 
 
 def parse_dependency_links(file_name):
-    dependency_links = []
-    for line in open(file_name, 'r').read().split('\n'):
-        if re.match(r'\s*-[ef]\s+', line):
-            dependency_links.append(re.sub(r'\s*-[ef]\s+', '', line))
-
-    return dependency_links
+    return [
+        re.sub(r'\s*-[ef]\s+', '', line)
+        for line in open(file_name, 'r').read().split('\n')
+        if re.match(r'\s*-[ef]\s+', line)
+    ]
 
 
 setup(

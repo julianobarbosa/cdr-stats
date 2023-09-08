@@ -90,8 +90,7 @@ class BlacklistAdmin(admin.ModelAdmin):
                 return HttpResponseRedirect(reverse("admin:cdr_alert_blacklist_changelist"))
 
             else:
-                values = request.POST.getlist('select')
-                if values:
+                if values := request.POST.getlist('select'):
                     for i in values:
                         Blacklist.objects.create(
                             phonenumber_prefix=int(i),
@@ -161,8 +160,7 @@ class WhitelistAdmin(admin.ModelAdmin):
                 messages.info(request, msg)
                 return HttpResponseRedirect(reverse("admin:cdr_alert_whitelist_changelist"))
             else:
-                values = request.POST.getlist('select')
-                if values:
+                if values := request.POST.getlist('select'):
                     for i in values:
                         Whitelist.objects.create(
                             phonenumber_prefix=int(i),

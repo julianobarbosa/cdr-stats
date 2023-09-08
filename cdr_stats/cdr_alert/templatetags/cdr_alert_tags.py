@@ -68,6 +68,6 @@ def alarm_report_status(value):
 def get_prefixes():
     """Usage: {% get_prefixes %}"""
     prefix_list = map(str, Prefix.objects.values_list("prefix", flat=True).all().order_by('prefix'))
-    prefix_list = (','.join('"' + item + '"' for item in prefix_list))
-    prefix_list = "[" + str(prefix_list) + "]"
+    prefix_list = ','.join(f'"{item}"' for item in prefix_list)
+    prefix_list = f"[{prefix_list}]"
     return mark_safe(prefix_list)

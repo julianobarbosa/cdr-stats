@@ -112,7 +112,7 @@ def cdr_view(request):
         country_id = form.cleaned_data.get('country_id')
         # convert list value in int
         country_id = [int(row) for row in country_id]
-        if len(country_id) >= 1:
+        if country_id:
             request.session['session_country_id'] = country_id
 
         start_date = ceil_strdate(str(from_date), 'start', True)
@@ -149,7 +149,7 @@ def cdr_view(request):
 
     # Set default cause we display page for the first time
     if request.method == 'GET' and not using_session:
-        tday = datetime.today()
+        tday = datetime.now()
         from_date = datetime(tday.year, tday.month, 1, 0, 0, 0, 0)
         last_day = ((datetime(tday.year, tday.month, 1, 23, 59, 59, 999999) +
                      relativedelta(months=1)) -
@@ -291,9 +291,9 @@ def cdr_export_to_csv(request):
     """
     format_type = request.GET['format']
     # get the response object, this can be used as a stream
-    response = HttpResponse(content_type='text/%s' % format_type)
+    response = HttpResponse(content_type=f'text/{format_type}')
     # force download
-    response['Content-Disposition'] = 'attachment;filename=export.%s' % format_type
+    response['Content-Disposition'] = f'attachment;filename=export.{format_type}'
 
     # get query_var from request.session
     start_date = request.session.get('session_start_date')
@@ -318,16 +318,18 @@ def cdr_export_to_csv(request):
     for cdr in cdrs:
         starting_date = str(cdr.starting_date)
 
-        list_val.append((
-            starting_date,
-            cdr.caller_id_number + '-' + cdr.caller_id_name,
-            cdr.destination_number,
-            cdr.duration,
-            cdr.billsec,
-            get_hangupcause_name(cdr.hangup_cause_id),
-            cdr.accountcode,
-            cdr.direction,
-        ))
+        list_val.append(
+            (
+                starting_date,
+                f'{cdr.caller_id_number}-{cdr.caller_id_name}',
+                cdr.destination_number,
+                cdr.duration,
+                cdr.billsec,
+                get_hangupcause_name(cdr.hangup_cause_id),
+                cdr.accountcode,
+                cdr.direction,
+            )
+        )
 
     data = tablib.Dataset(*list_val, headers=headers)
     if format_type == Export_choice.XLS:
@@ -415,9 +417,7 @@ def cdr_dashboard(request):
     extra_serie4 = {"tooltip": {"y_start": "", "y_end": ""}, "date_format": tooltip_date}
     extra_serie5 = {"tooltip": {"y_start": "", "y_end": ""}, "date_format": tooltip_date}
 
-    kwargs1 = {}
-    kwargs1['bar'] = True
-
+    kwargs1 = {'bar': True}
     final_chartdata = {
         'x': xdata,
         'name1': 'Calls', 'y1': ydata, 'extra1': extra_serie1, 'kwargs1': kwargs1,
@@ -584,7 +584,7 @@ def cdr_daily_comparison(request):
     hourly_chartdata = {'x': []}
     compare_days = 2
     compare_type = COMPARE_WITH.previous_days
-    today_date = datetime.today()
+    today_date = datetime.now()
     form = CompareCallSearchForm(request.POST or None,
                                  initial={'from_date': today_date.strftime('%Y-%m-%d'),
                                           'compare_days': compare_days,
@@ -607,7 +607,7 @@ def cdr_daily_comparison(request):
     if switch_id and switch_id != '0':
         kwargs['switch_id'] = int(switch_id)
 
-    xdata = [i for i in range(0, 24)]
+    xdata = list(range(0, 24))
     hourly_chartdata = {'x': xdata}
 
     y_count = 1
@@ -619,16 +619,16 @@ def cdr_daily_comparison(request):
         # Get hourly Data
         hourly_data = get_report_compare_cdr(request.user, 'hour', start_date, end_date, switch_id)
 
-        extra_serie = {
-            "tooltip": {"y_start": "", "y_end": " " + metric}
-        }
+        extra_serie = {"tooltip": {"y_start": "", "y_end": f" {metric}"}}
         # We only need to set x axis once, so let's do it for nbcalls
         # hourly_chartdata['x'] = hourly_data["nbcalls"]["x_timestamp"]
         for switch in hourly_data[metric]["columns"]:
-            serie = get_switch_ip_addr(switch) + "_day_" + str(nday)
-            hourly_chartdata['name' + str(y_count)] = serie
-            hourly_chartdata['y' + str(y_count)] = hourly_data[metric]["values"][str(switch)]
-            hourly_chartdata['extra' + str(y_count)] = extra_serie
+            serie = f"{get_switch_ip_addr(switch)}_day_{str(nday)}"
+            hourly_chartdata[f'name{str(y_count)}'] = serie
+            hourly_chartdata[f'y{str(y_count)}'] = hourly_data[metric][
+                "values"
+            ][str(switch)]
+            hourly_chartdata[f'extra{str(y_count)}'] = extra_serie
             y_count += 1
 
     variables = {
@@ -673,7 +673,7 @@ def cdr_overview(request):
     metric = 'nbcalls'  # Default metric
 
     action = 'tabs-1'
-    tday = datetime.today()
+    tday = datetime.now()
     switch_id = 0
     # assign initial value in form fields
     form = CdrOverviewForm(request.POST or None,
@@ -693,49 +693,47 @@ def cdr_overview(request):
     # get the number of hour that diff the date
     delta = end_date - start_date
     hour_diff = abs(divmod(delta.days * 86400 + delta.seconds, 60)[0]) / 60
-    if hour_diff <= 72:
-        display_chart = 'hourly'
-    else:
-        display_chart = 'daily'
-
+    display_chart = 'hourly' if hour_diff <= 72 else 'daily'
     # check metric is valid
     if metric not in ['nbcalls', 'duration', 'billsec', 'buy_cost', 'sell_cost']:
         metric = 'nbcalls'
 
     extra_serie = {
-        "tooltip": {"y_start": "", "y_end": " " + metric},
-        "date_format": "%d %b %y %H:%M%p"
+        "tooltip": {"y_start": "", "y_end": f" {metric}"},
+        "date_format": "%d %b %y %H:%M%p",
     }
 
-    if display_chart == 'hourly':
-        hourly_data = get_report_cdr_per_switch(request.user, 'hour', start_date, end_date, switch_id)
-
-        for switch in hourly_data[metric]["columns"]:
-            hourly_chartdata['x'] = hourly_data[metric]["x_timestamp"]
-            hourly_chartdata['name' + str(switch)] = get_switch_ip_addr(switch)
-            hourly_chartdata['y' + str(switch)] = hourly_data[metric]["values"][str(switch)]
-            hourly_chartdata['extra' + str(switch)] = extra_serie
-
-        total_calls = hourly_data["nbcalls"]["total"]
-        total_duration = hourly_data["duration"]["total"]
-        total_billsec = hourly_data["billsec"]["total"]
-        total_buy_cost = hourly_data["buy_cost"]["total"]
-        total_sell_cost = hourly_data["sell_cost"]["total"]
-
-    elif display_chart == 'daily':
+    if display_chart == 'daily':
         daily_data = get_report_cdr_per_switch(request.user, 'day', start_date, end_date, switch_id)
 
         for switch in daily_data[metric]["columns"]:
             daily_chartdata['x'] = daily_data[metric]["x_timestamp"]
-            daily_chartdata['name' + str(switch)] = get_switch_ip_addr(switch)
-            daily_chartdata['y' + str(switch)] = daily_data[metric]["values"][str(switch)]
-            daily_chartdata['extra' + str(switch)] = extra_serie
+            daily_chartdata[f'name{str(switch)}'] = get_switch_ip_addr(switch)
+            daily_chartdata[f'y{str(switch)}'] = daily_data[metric]["values"][str(switch)]
+            daily_chartdata[f'extra{str(switch)}'] = extra_serie
 
         total_calls = daily_data["nbcalls"]["total"]
         total_duration = daily_data["duration"]["total"]
         total_billsec = daily_data["billsec"]["total"]
         total_buy_cost = daily_data["buy_cost"]["total"]
         total_sell_cost = daily_data["sell_cost"]["total"]
+
+    elif display_chart == 'hourly':
+        hourly_data = get_report_cdr_per_switch(request.user, 'hour', start_date, end_date, switch_id)
+
+        for switch in hourly_data[metric]["columns"]:
+            hourly_chartdata['x'] = hourly_data[metric]["x_timestamp"]
+            hourly_chartdata[f'name{str(switch)}'] = get_switch_ip_addr(switch)
+            hourly_chartdata[f'y{str(switch)}'] = hourly_data[metric][
+                "values"
+            ][str(switch)]
+            hourly_chartdata[f'extra{str(switch)}'] = extra_serie
+
+        total_calls = hourly_data["nbcalls"]["total"]
+        total_duration = hourly_data["duration"]["total"]
+        total_billsec = hourly_data["billsec"]["total"]
+        total_buy_cost = hourly_data["buy_cost"]["total"]
+        total_sell_cost = hourly_data["sell_cost"]["total"]
 
     # Calculate the Average Time of Call
     metric_aggr = calculate_act_acd(total_calls, total_duration)

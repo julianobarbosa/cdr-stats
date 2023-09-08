@@ -40,21 +40,19 @@ js_info_dict = {
     'packages': ('cdr', 'cdr_alert'),
 }
 
-urlpatterns = patterns('',
-
-                       # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
-                       # to INSTALLED_APPS to enable admin documentation:
-                       # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-                       (r'^admin/', include(admin.site.urls)),
-                       (r'^i18n/', include('django.conf.urls.i18n')),
-                       (r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
-                       (r'^admin_tools/', include('admin_tools.urls')),
-
-                       # Serve static
-                       (r'^static/(?P<path>.*)$', 'django.views.static.serve',
-                        {'document_root': settings.STATIC_ROOT}),
-                       (r'^%s/' % settings.DAJAXICE_MEDIA_PREFIX, include('dajaxice.urls')),
-                       )
+urlpatterns = patterns(
+    '',
+    (r'^admin/', include(admin.site.urls)),
+    (r'^i18n/', include('django.conf.urls.i18n')),
+    (r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
+    (r'^admin_tools/', include('admin_tools.urls')),
+    (
+        r'^static/(?P<path>.*)$',
+        'django.views.static.serve',
+        {'document_root': settings.STATIC_ROOT},
+    ),
+    (f'^{settings.DAJAXICE_MEDIA_PREFIX}/', include('dajaxice.urls')),
+)
 
 if settings.DEBUG:
     import debug_toolbar
@@ -74,10 +72,14 @@ urlpatterns += urlpatterns_apirest
 #     url("", include('django_socketio.urls')),
 # )
 
-urlpatterns += patterns('',
-                        (r'^%s/(?P<path>.*)$' % settings.MEDIA_URL.strip(os.sep),
-                         'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-                        )
+urlpatterns += patterns(
+    '',
+    (
+        f'^{settings.MEDIA_URL.strip(os.sep)}/(?P<path>.*)$',
+        'django.views.static.serve',
+        {'document_root': settings.MEDIA_ROOT},
+    ),
+)
 
 handler404 = 'cdr_stats.urls.custom_404_view'
 handler500 = 'cdr_stats.urls.custom_500_view'

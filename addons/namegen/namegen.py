@@ -8,8 +8,7 @@ class NameGenerator(object):
         self._used_indices = set()
     def __call__(self):
         index = random.randrange(self._total_names)
-        name = self._names[index]
-        return name
+        return self._names[index]
     def __iter__(self):
         while True:
             yield self()

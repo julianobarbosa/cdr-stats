@@ -35,7 +35,7 @@ COMPARE_LIST = (
     (4, '<'),
     (5, '<='),
 )
-COMPARE_DICT = dict((x, y) for x, y in COMPARE_LIST)
+COMPARE_DICT = dict(COMPARE_LIST)
 
 PAGE_SIZE_LIST = (
     (10, '10'),
@@ -46,24 +46,20 @@ PAGE_SIZE_LIST = (
     (500, '500'),
     (1000, '1000'),
 )
-PAGE_SIZE_DICT = dict((x, y) for x, y in PAGE_SIZE_LIST)
+PAGE_SIZE_DICT = dict(PAGE_SIZE_LIST)
 
 
 def sw_list_with_all():
     """Switch list"""
-    list_sw = []
-    list_sw.append((0, _('all switches').capitalize()))
-    for i in get_switch_list():
-        list_sw.append((i[0], i[1]))
+    list_sw = [(0, _('all switches').capitalize())]
+    list_sw.extend((i[0], i[1]) for i in get_switch_list())
     return list_sw
 
 
 def hc_list_with_all():
     """Hangup cause list"""
-    list_hc = []
-    list_hc.append((0, _('all').capitalize()))
-    for i in HangupCause.objects.get_all_hangupcause():
-        list_hc.append((i[0], i[1]))
+    list_hc = [(0, _('all').capitalize())]
+    list_hc.extend((i[0], i[1]) for i in HangupCause.objects.get_all_hangupcause())
     return list_hc
 
 
@@ -71,10 +67,8 @@ def country_list_with_all():
     """
     Country list
     """
-    list_ct = []
-    list_ct.append((0, _('all').capitalize()))
-    for i in get_country_list():
-        list_ct.append((i[0], i[1]))
+    list_ct = [(0, _('all').capitalize())]
+    list_ct.extend((i[0], i[1]) for i in get_country_list())
     return list_ct
 
 
@@ -112,7 +106,7 @@ class SearchForm(forms.Form):
             try:
                 int(duration)
             except:
-                raise forms.ValidationError('%s is not a valid duration.' % duration)
+                raise forms.ValidationError(f'{duration} is not a valid duration.')
         return duration
 
     def clean_accountcode(self):
@@ -410,11 +404,9 @@ class EmailReportForm(forms.ModelForm):
                 validate_email(email)
                 mail_list.append(str(email))
             except:
-                raise forms.ValidationError('%s is not a valid e-mail address.' % email)
+                raise forms.ValidationError(f'{email} is not a valid e-mail address.')
 
-        # Always return the cleaned data.
-        mail_list = ','.join(mail_list)
-        return mail_list
+        return ','.join(mail_list)
 
 
 class FileImport(forms.Form):
@@ -429,12 +421,16 @@ class FileImport(forms.Form):
         """Form Validation :  File extension Check"""
         filename = self.cleaned_data['csv_file']
         file_exts = ('csv', 'txt')
-        if not str(filename).split('.')[1].lower() in file_exts:
-            raise forms.ValidationError(_(u'document types accepted: %s' % """ """.join(file_exts)))
+        if str(filename).split('.')[1].lower() not in file_exts:
+            raise forms.ValidationError(
+                _(f'document types accepted: {""" """.join(file_exts)}')
+            )
         else:
             return filename
 
-ACCOUNTCODE_FIELD_LIST_NUM = [(x, 'column-' + str(x)) for x in range(1, len(CDR_FIELD_LIST) + 1)]
+ACCOUNTCODE_FIELD_LIST_NUM = [
+    (x, f'column-{str(x)}') for x in range(1, len(CDR_FIELD_LIST) + 1)
+]
 ACCOUNTCODE_FIELD_LIST_NUM.append((0, 'No import'))
 ACCOUNTCODE_FIELD_LIST_NUM = sorted(ACCOUNTCODE_FIELD_LIST_NUM,
                                     key=lambda ACCOUNTCODE_FIELD_LIST_NUM: ACCOUNTCODE_FIELD_LIST_NUM[0])

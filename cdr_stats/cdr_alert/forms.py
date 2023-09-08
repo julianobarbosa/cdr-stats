@@ -34,12 +34,14 @@ class BWCountryForm(forms.Form):
         self.helper = FormHelper()
         if form_type == 'blacklist':
             self.helper.form_id = 'id_bl_country_from'
-            form_button = HTML("""<input id="add_bl_country" type="button" class="btn btn-info" value="%s" />""" %
-                               _("blacklist this country").capitalize())
+            form_button = HTML(
+                f"""<input id="add_bl_country" type="button" class="btn btn-info" value="{_("blacklist this country").capitalize()}" />"""
+            )
         else:
             self.helper.form_id = 'id_wl_country_from'
-            form_button = HTML("""<input id="add_wl_country" type="button" class="btn btn-info" value="%s" />""" %
-                               _("whitelist this country").capitalize())
+            form_button = HTML(
+                f"""<input id="add_wl_country" type="button" class="btn btn-info" value="{_("whitelist this country").capitalize()}" />"""
+            )
 
         self.helper.form_show_labels = False
         css_class = 'col-md-3 col-xs-6'
@@ -64,13 +66,15 @@ class BWPrefixForm(forms.Form):
         if form_type == 'blacklist':
             self.helper.form_id = 'id_bl_prefix_from'
             prefix_field_id = 'id_bl_prefix'
-            form_button = HTML("""<input id="add_bl_prefix" type="button" class="btn btn-info" value="%s" />""" %
-                               _("blacklist this dialcode").capitalize())
+            form_button = HTML(
+                f"""<input id="add_bl_prefix" type="button" class="btn btn-info" value="{_("blacklist this dialcode").capitalize()}" />"""
+            )
         else:
             self.helper.form_id = 'id_wl_prefix_from'
             prefix_field_id = 'id_wl_prefix'
-            form_button = HTML("""<input id="add_wl_prefix" type="button" class="btn btn-info" value="%s" />""" %
-                               _("whitelist this dialcode").capitalize())
+            form_button = HTML(
+                f"""<input id="add_wl_prefix" type="button" class="btn btn-info" value="{_("whitelist this dialcode").capitalize()}" />"""
+            )
 
         self.helper.form_show_labels = False
         css_class = 'col-md-3 col-xs-6'
@@ -136,11 +140,13 @@ class AlarmReportForm(forms.Form):
 
     def __init__(self, user, *args, **kwargs):
         super(AlarmReportForm, self).__init__(*args, **kwargs)
-        alarm_list_user = []
-        alarm_list_user.append((0, '---'))
-        for i in Alarm.objects.values_list('id', 'name').filter(user=user).order_by('id'):
-            alarm_list_user.append((i[0], i[1]))
-
+        alarm_list_user = [(0, '---')]
+        alarm_list_user.extend(
+            (i[0], i[1])
+            for i in Alarm.objects.values_list('id', 'name')
+            .filter(user=user)
+            .order_by('id')
+        )
         self.fields['alarm_id'].choices = alarm_list_user
         self.helper = FormHelper()
         self.helper.form_action = '.'

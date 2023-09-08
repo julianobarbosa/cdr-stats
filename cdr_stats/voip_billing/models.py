@@ -57,7 +57,7 @@ class VoIPPlan(Model):
         verbose_name_plural = _("VoIP plans")
 
     def __unicode__(self):
-        return '[%s] %s' % (self.id, self.name)
+        return f'[{self.id}] {self.name}'
 
 
 class BanPlan(models.Model):
@@ -79,7 +79,7 @@ class BanPlan(models.Model):
         verbose_name_plural = _("ban plans")
 
     def __unicode__(self):
-        return "%s" % (self.name)
+        return f"{self.name}"
 
 
 class VoIPPlan_BanPlan(models.Model):
@@ -97,7 +97,7 @@ class VoIPPlan_BanPlan(models.Model):
         db_table = u'voipplan_banplan'
 
     def __unicode__(self):
-        return "%s" % (self.banplan)
+        return f"{self.banplan}"
 
 
 class BanPrefix(models.Model):
@@ -119,7 +119,7 @@ class BanPrefix(models.Model):
         verbose_name_plural = _("ban prefixes")
 
     def __unicode__(self):
-        return "%s" % (self.ban_plan)
+        return f"{self.ban_plan}"
 
     def prefix_with_name(self):
         """
@@ -161,7 +161,7 @@ class VoIPRetailPlan(Model):
         verbose_name_plural = _("retail plans")
 
     def __unicode__(self):
-        return "%s" % (self.name)
+        return f"{self.name}"
 
 
 class VoIPPlan_VoIPRetailPlan(models.Model):
@@ -179,7 +179,7 @@ class VoIPPlan_VoIPRetailPlan(models.Model):
         db_table = u'voipplan_voipretailplan'
 
     def __unicode__(self):
-        return "%s" % (self.voipplan)
+        return f"{self.voipplan}"
 
 
 class VoIPRetailRate(models.Model):
@@ -268,7 +268,7 @@ class VoIPCarrierPlan(Model):
         verbose_name_plural = _("carrier plans")
 
     def __unicode__(self):
-        return "%s" % (self.name)
+        return f"{self.name}"
 
 
 class VoIPCarrierRate(models.Model):
@@ -334,7 +334,7 @@ class VoIPPlan_VoIPCarrierPlan(models.Model):
         db_table = u'voipplan_voipcarrierplan'
 
     def __unicode__(self):
-        return "%s" % (self.voipplan)
+        return f"{self.voipplan}"
 
 
 def find_rates(voipplan_id, dialcode, sort_field, order):
@@ -343,61 +343,32 @@ def find_rates(voipplan_id, dialcode, sort_field, order):
     """
     cursor = connection.cursor()
 
-    # variables used for sorting
-    extension_query = ''
-
     if sort_field == 'prefix':
         sort_field = 'voip_retail_rate.prefix'
     if sort_field == 'retail_rate':
         sort_field = 'minrate'
     if sort_field == 'destination':
         sort_field = 'dialcode_prefix.destination'
-    if sort_field:
-        extension_query = "ORDER BY " + sort_field + ' ' + order
-
+    extension_query = f"ORDER BY {sort_field} {order}" if sort_field else ''
     cursor = connection.cursor()
     if dialcode:
-        sqldialcode = str(dialcode) + '%'
-        sql_statement = (
-            "SELECT voip_retail_rate.prefix, "
-            "Min(retail_rate) as minrate, dialcode_prefix.destination "
-            "FROM voip_retail_rate "
-            "INNER JOIN voipplan_voipretailplan "
-            "ON voipplan_voipretailplan.voipretailplan_id = "
-            "voip_retail_rate.voip_retail_plan_id "
-            "LEFT JOIN dialcode_prefix ON dialcode_prefix.prefix = "
-            "voip_retail_rate.prefix "
-            "WHERE voipplan_id=%s "
-            "AND CAST(voip_retail_rate.prefix AS TEXT) LIKE %s "
-            "GROUP BY voip_retail_rate.prefix, dialcode_prefix.destination "
-            + extension_query)
+        sqldialcode = f'{str(dialcode)}%'
+        sql_statement = f"SELECT voip_retail_rate.prefix, Min(retail_rate) as minrate, dialcode_prefix.destination FROM voip_retail_rate INNER JOIN voipplan_voipretailplan ON voipplan_voipretailplan.voipretailplan_id = voip_retail_rate.voip_retail_plan_id LEFT JOIN dialcode_prefix ON dialcode_prefix.prefix = voip_retail_rate.prefix WHERE voipplan_id=%s AND CAST(voip_retail_rate.prefix AS TEXT) LIKE %s GROUP BY voip_retail_rate.prefix, dialcode_prefix.destination {extension_query}"
 
         cursor.execute(sql_statement, [voipplan_id, sqldialcode])
     else:
-        sql_statement = (
-            "SELECT voip_retail_rate.prefix, "
-            "Min(retail_rate) as minrate, dialcode_prefix.destination "
-            "FROM voip_retail_rate "
-            "INNER JOIN voipplan_voipretailplan "
-            "ON voipplan_voipretailplan.voipretailplan_id = "
-            "voip_retail_rate.voip_retail_plan_id "
-            "LEFT JOIN dialcode_prefix ON dialcode_prefix.prefix = "
-            "voip_retail_rate.prefix "
-            "WHERE voipplan_id=%s "
-            "GROUP BY voip_retail_rate.prefix, dialcode_prefix.destination "
-            + extension_query)
+        sql_statement = f"SELECT voip_retail_rate.prefix, Min(retail_rate) as minrate, dialcode_prefix.destination FROM voip_retail_rate INNER JOIN voipplan_voipretailplan ON voipplan_voipretailplan.voipretailplan_id = voip_retail_rate.voip_retail_plan_id LEFT JOIN dialcode_prefix ON dialcode_prefix.prefix = voip_retail_rate.prefix WHERE voipplan_id=%s GROUP BY voip_retail_rate.prefix, dialcode_prefix.destination {extension_query}"
 
         cursor.execute(sql_statement, [voipplan_id])
 
     row = cursor.fetchall()
     result = []
     for record in row:
-        # Not banned Prefix
-        allowed = prefix_allowed_to_call(record[0], voipplan_id)
-        if allowed:
-            modrecord = {}
-            modrecord['prefix'] = record[0]
-            modrecord['retail_rate'] = record[1]
-            modrecord['prefix__destination'] = record[2]
+        if allowed := prefix_allowed_to_call(record[0], voipplan_id):
+            modrecord = {
+                'prefix': record[0],
+                'retail_rate': record[1],
+                'prefix__destination': record[2],
+            }
             result.append(modrecord)
     return result

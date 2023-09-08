@@ -74,7 +74,9 @@ def get_dataframe_query(query, user, interval, start_date, end_date, switch_id, 
     upd_query = upd_query.replace("#INTERVAL#", interval)
     if country_id_list and len(country_id_list) > 0:
         select_country = ", ".join(str(int(l)) for l in country_id_list)
-        upd_query = upd_query.replace("#COUNTRY_CONDITION#", "AND country_id IN (" + select_country + ")")
+        upd_query = upd_query.replace(
+            "#COUNTRY_CONDITION#", f"AND country_id IN ({select_country})"
+        )
     else:
         upd_query = upd_query.replace("#COUNTRY_CONDITION#", "")
 
@@ -82,8 +84,7 @@ def get_dataframe_query(query, user, interval, start_date, end_date, switch_id, 
         'start_date': start_date,
         'end_date': end_date,
     }
-    df = sql.read_sql_query(upd_query, connection, params=params)
-    return df
+    return sql.read_sql_query(upd_query, connection, params=params)
 
 
 def get_report_cdr_per_switch(user, interval, start_date, end_date, switch_id):
@@ -196,9 +197,7 @@ def get_dataframe_query_cmp_day(query, user, interval, start_date, end_date, swi
         'start_date': start_date,
         'end_date': end_date,
     }
-    # df = sql.read_sql_query(upd_query, connection, params=params, index_col=["dateday", "switch_id"])
-    df = sql.read_sql_query(upd_query, connection, params=params)
-    return df
+    return sql.read_sql_query(upd_query, connection, params=params)
 
 
 def get_report_compare_cdr(user, interval, start_date, end_date, switch_id):

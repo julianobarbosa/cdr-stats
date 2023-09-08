@@ -42,20 +42,16 @@ def push_asterisk_cdr(shell, table_name, db_engine, cursor, cursor_updated, swit
     function to import and aggreagate Asterisk CDR
     """
     cdr_source_type = CDR_SOURCE_TYPE.ASTERISK
-    count_import = 0
-
     # Each time the task is running we will only take 1000 records to import
     # This define the max speed of import, this limit could be changed
     if db_engine == 'mysql':
-        cursor.execute("SELECT dst, UNIX_TIMESTAMP(calldate), clid, channel,"
-                       "duration, billsec, disposition, accountcode, uniqueid,"
-                       " %s FROM %s WHERE import_cdr=0 LIMIT 0, 1000" %
-                       (settings.ASTERISK_PRIMARY_KEY, table_name))
+        cursor.execute(
+            f"SELECT dst, UNIX_TIMESTAMP(calldate), clid, channel,duration, billsec, disposition, accountcode, uniqueid, {settings.ASTERISK_PRIMARY_KEY} FROM {table_name} WHERE import_cdr=0 LIMIT 0, 1000"
+        )
     elif db_engine == 'pgsql':
-        cursor.execute("SELECT dst, extract(epoch FROM calldate), clid, channel,"
-                       "duration, billsec, disposition, accountcode, uniqueid,"
-                       " %s FROM %s WHERE import_cdr=0 LIMIT 1000" %
-                       (settings.ASTERISK_PRIMARY_KEY, table_name))
+        cursor.execute(
+            f"SELECT dst, extract(epoch FROM calldate), clid, channel,duration, billsec, disposition, accountcode, uniqueid, {settings.ASTERISK_PRIMARY_KEY} FROM {table_name} WHERE import_cdr=0 LIMIT 1000"
+        )
     row = cursor.fetchone()
 
     # Store cdr in list to insert by bulk
@@ -63,6 +59,7 @@ def push_asterisk_cdr(shell, table_name, db_engine, cursor, cursor_updated, swit
     batch_count = 0
     acctid_list = ''
 
+    count_import = 0
     while row is not None:
         destination_number = row[0]
         if not destination_number:
@@ -147,13 +144,12 @@ def push_asterisk_cdr(shell, table_name, db_engine, cursor, cursor_updated, swit
         local_count_import = local_count_import + 1
         batch_count = batch_count + 1
 
-        acctid_list += "%s, " % str(acctid)
+        acctid_list += f"{str(acctid)}, "
         if batch_count == 100:
             acctid_list = acctid_list[:-2]  # trim last comma (,) from string
             # Postgresql
             # select * from table_name where id in (1,2,3);
-            update_cdr = "UPDATE %s SET import_cdr=1 WHERE %s in (%s)" % \
-                (table_name, settings.ASTERISK_PRIMARY_KEY, acctid_list)
+            update_cdr = f"UPDATE {table_name} SET import_cdr=1 WHERE {settings.ASTERISK_PRIMARY_KEY} in ({acctid_list})"
             cursor_updated.execute(update_cdr)
 
             batch_count = 0
@@ -166,8 +162,7 @@ def push_asterisk_cdr(shell, table_name, db_engine, cursor, cursor_updated, swit
         acctid_list = acctid_list[:-2]  # trim last comma (,) from string
         # Postgresql
         # select * from table_name where id in (1,2,3);
-        update_cdr = "UPDATE %s SET import_cdr=1 WHERE %s in (%s)" % \
-            (table_name, settings.ASTERISK_PRIMARY_KEY, acctid_list)
+        update_cdr = f"UPDATE {table_name} SET import_cdr=1 WHERE {settings.ASTERISK_PRIMARY_KEY} in ({acctid_list})"
         cursor_updated.execute(update_cdr)
 
     return count_import

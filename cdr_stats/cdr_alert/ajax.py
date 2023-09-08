@@ -35,24 +35,23 @@ info_msg = _('is already added to the')
 error_msg = _('has not been added to the')
 delete_error_msg = _('has not been deleted from')
 
-blacklist_success = '<div class="alert alert-success">' + alert + ' : (%s) ' + success_msg + ' ' + blacklist_word + '</div>'
-blacklist_delete_success = '<div class="alert alert-success">' + alert + ' : (%s) ' + delete_success_msg + ' ' + blacklist_word + '</div>'
-blacklist_delete_all_success = '<div class="alert alert-success">' + alert + ' :  ' + delete_all_success_msg + ' ' + blacklist_word + '</div>'
-blacklist_info = '<div class="alert alert-info">' + alert + ' : (%s) ' + info_msg + ' ' + blacklist_word + '</div>'
-blacklist_error = '<div class="alert alert-danger">' + alert + ' : (%s) ' + error_msg + ' ' + blacklist_word + '</div>'
-blacklist_delete_error = '<div class="alert alert-danger">' + alert + ' : (%s) ' + delete_error_msg + ' ' + blacklist_word + '</div>'
+blacklist_success = f'<div class="alert alert-success">{alert} : (%s) {success_msg} {blacklist_word}</div>'
+blacklist_delete_success = f'<div class="alert alert-success">{alert} : (%s) {delete_success_msg} {blacklist_word}</div>'
+blacklist_delete_all_success = f'<div class="alert alert-success">{alert} :  {delete_all_success_msg} {blacklist_word}</div>'
+blacklist_info = f'<div class="alert alert-info">{alert} : (%s) {info_msg} {blacklist_word}</div>'
+blacklist_error = f'<div class="alert alert-danger">{alert} : (%s) {error_msg} {blacklist_word}</div>'
+blacklist_delete_error = f'<div class="alert alert-danger">{alert} : (%s) {delete_error_msg} {blacklist_word}</div>'
 
 
-whitelist_success = '<div class="alert alert-success">' + alert + ' : (%s) ' + success_msg + ' ' + whitelist_word + '</div>'
-whitelist_delete_success = '<div class="alert alert-success">' + alert + ' : (%s) ' + delete_success_msg + ' ' + whitelist_word + '</div>'
-whitelist_delete_all_success = '<div class="alert alert-success">' + alert + ' :  ' + delete_all_success_msg + ' ' + whitelist_word + '</div>'
-whitelist_info = '<div class="alert alert-info">' + alert + ' : (%s) ' + info_msg + ' ' + whitelist_word + '</div>'
-whitelist_error = '<div class="alert alert-danger">' + alert + ' : (%s) ' + error_msg + ' ' + whitelist_word + '</div>'
-whitelist_delete_error = '<div class="alert alert-danger">' + alert + ' : (%s) ' + delete_error_msg + ' ' + whitelist_word + '</div>'
+whitelist_success = f'<div class="alert alert-success">{alert} : (%s) {success_msg} {whitelist_word}</div>'
+whitelist_delete_success = f'<div class="alert alert-success">{alert} : (%s) {delete_success_msg} {whitelist_word}</div>'
+whitelist_delete_all_success = f'<div class="alert alert-success">{alert} :  {delete_all_success_msg} {whitelist_word}</div>'
+whitelist_info = f'<div class="alert alert-info">{alert} : (%s) {info_msg} {whitelist_word}</div>'
+whitelist_error = f'<div class="alert alert-danger">{alert} : (%s) {error_msg} {whitelist_word}</div>'
+whitelist_delete_error = f'<div class="alert alert-danger">{alert} : (%s) {delete_error_msg} {whitelist_word}</div>'
 
 
 def get_html_table(request, default_name='blacklist'):
-    col = 5  # group by columns
     html_table = '<div class="table-responsive"><table class="table table-striped table-bordered table-condensed">'
     if default_name == 'blacklist':
         prefix_list = Blacklist.objects.filter(user=request.user).order_by('id')
@@ -65,23 +64,24 @@ def get_html_table(request, default_name='blacklist'):
         html_table += '<tr><td><input type="checkbox" onclick="toggleChecked_whitelist(this.checked);"></td></tr>'
 
     if prefix_list_count != 0:
+        col = 5  # group by columns
         # Logic of groupby_columns template tag
         rows = (prefix_list_count // col) + 1
         table = [prefix_list[i::rows] for i in range(rows)]
         n = len(table[0])
-        new_prefix_list = [row + [None for x in range(n - len(row))] for row in table]
+        new_prefix_list = [row + [None for _ in range(n - len(row))] for row in table]
 
         for obj_list in new_prefix_list:
             html_table += '<tr>'
             for obj in obj_list:
                 if obj:
                     if default_name == 'blacklist':
-                        obj_string = '<input type="checkbox" name="select_blacklist" class="checkbox" value="' + str(obj.id) + '" />&nbsp;'
-                    if default_name == 'whitelist':
-                        obj_string = '<input type="checkbox" name="select_whitelist" class="checkbox" value="' + str(obj.id) + '" />&nbsp;'
+                        obj_string = f'<input type="checkbox" name="select_blacklist" class="checkbox" value="{str(obj.id)}" />&nbsp;'
+                    elif default_name == 'whitelist':
+                        obj_string = f'<input type="checkbox" name="select_whitelist" class="checkbox" value="{str(obj.id)}" />&nbsp;'
 
-                    obj_string += str(obj.phonenumber_prefix) + ' | ' + str(obj.country.countryname)
-                    html_table += '<td>' + str(obj_string) + '</td>'
+                    obj_string += f'{str(obj.phonenumber_prefix)} | {str(obj.country.countryname)}'
+                    html_table += f'<td>{str(obj_string)}</td>'
                 else:
                     html_table += '<td>&nbsp;</td>'
             html_table += '</tr>'
@@ -168,9 +168,7 @@ def delete_blacklist(request, id_list):
         if str(id_list) != '0':
             id_list = map(int, id_list)
             objs = Blacklist.objects.filter(id__in=id_list)
-            del_dialcodes = ''
-            for i in objs:
-                del_dialcodes += str(i.phonenumber_prefix) + ', '
+            del_dialcodes = ''.join(f'{str(i.phonenumber_prefix)}, ' for i in objs)
             objs.delete()
             message = blacklist_delete_success % (str(del_dialcodes[:-1]))
         else:
@@ -265,9 +263,7 @@ def delete_whitelist(request, id_list):
         if str(id_list) != '0':
             id_list = map(int, id_list)
             objs = Whitelist.objects.filter(id__in=id_list)
-            del_dialcodes = ''
-            for i in objs:
-                del_dialcodes += str(i.phonenumber_prefix) + ', '
+            del_dialcodes = ''.join(f'{str(i.phonenumber_prefix)}, ' for i in objs)
             objs.delete()
             message = whitelist_delete_success % (str(del_dialcodes[:-1]))
         else:

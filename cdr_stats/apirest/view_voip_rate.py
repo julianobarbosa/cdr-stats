@@ -75,31 +75,26 @@ class VoIPRateList(APIView):
                 return Response(error)
 
         if recipient_phone_no:
-            # Check if recipient_phone_no is not banned
-            allowed = prefix_allowed_to_call(recipient_phone_no, voipplan_id)
-            if allowed:
+            if allowed := prefix_allowed_to_call(recipient_phone_no, voipplan_id):
                 # Get Destination prefix list e.g (34,346,3465,34657)
                 destination_prefix_list = prefix_list_string(str(recipient_phone_no))
                 prefixlist = destination_prefix_list.split(",")
                 # Get Rate List
                 rate_list = VoIPRetailRate.objects\
-                    .values('prefix', 'retail_rate', 'prefix__destination')\
-                    .filter(prefix__in=[int(s) for s in prefixlist])
+                        .values('prefix', 'retail_rate', 'prefix__destination')\
+                        .filter(prefix__in=[int(s) for s in prefixlist])
                 logger.debug('Voip Rate API : result OK 200')
                 return Response(rate_list)
             else:
-                error_msg = "Not allowed : %s" % recipient_phone_no
+                error_msg = f"Not allowed : {recipient_phone_no}"
                 error['error'] = error_msg
                 logger.error(error_msg)
                 return Response(error)
 
         sort_field = ''
-        order = ''
         if request.GET.get('sort_field'):
             sort_field = request.GET.get('sort_field')
-        if request.GET.get('order'):
-            order = request.GET.get('order')
-
+        order = request.GET.get('order') if request.GET.get('order') else ''
         # call the find rates function
         result = find_rates(voipplan_id, dialcode, sort_field, order)
 

@@ -44,7 +44,7 @@ class AccountCode(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return '[%s] %s' % (self.id, self.accountcode)
+        return f'[{self.id}] {self.accountcode}'
 
     class Meta:
         verbose_name = _("accountcode")

@@ -151,8 +151,10 @@ class VoIPPlanAdmin(admin.ModelAdmin):
         form = VoIPPlan_fileExport(request.POST or None, initial={'export_to': Export_choice.CSV})
         if form.is_valid():
             format_type = request.POST.get('export_to')
-            response = HttpResponse(content_type='text/%s' % format_type)
-            response['Content-Disposition'] = 'attachment;filename=export_voipplan.%s' % format_type
+            response = HttpResponse(content_type=f'text/{format_type}')
+            response[
+                'Content-Disposition'
+            ] = f'attachment;filename=export_voipplan.{format_type}'
 
             voipplan_id = request.POST['plan_id']
             sql_statement = (
@@ -204,7 +206,7 @@ class VoIPPlanAdmin(admin.ModelAdmin):
         """
         opts = VoIPPlan._meta
         # default values for form
-        tday = datetime.today()
+        tday = datetime.now()
         to_date = from_date = tday.strftime('%Y-%m-%d')
         form = RebillForm(request.POST or None,
                           initial={'from_date': from_date, 'to_date': to_date,
@@ -237,7 +239,7 @@ class VoIPPlanAdmin(admin.ModelAdmin):
             if not request.user.is_superuser:  # not superuser
                 call_kwargs['accountcode'] = request.user.userprofile.accountcode
                 monthly_kwargs['metadata.accountcode'] =\
-                    daily_kwargs['metadata.accountcode'] = call_kwargs['accountcode']
+                        daily_kwargs['metadata.accountcode'] = call_kwargs['accountcode']
 
             # Get total no of calls which are going to rebill
             # call_rebill_count = mongodb.cdr_common.find(call_kwargs).count()
@@ -409,8 +411,10 @@ class VoIPRetailRateAdmin(admin.ModelAdmin):
 
         if form.is_valid():
             format_type = request.POST.get('export_to')
-            response = HttpResponse(content_type='text/%s' % format_type)
-            response['Content-Disposition'] = 'attachment;filename=export_retail_rate.%s' % format_type
+            response = HttpResponse(content_type=f'text/{format_type}')
+            response[
+                'Content-Disposition'
+            ] = f'attachment;filename=export_retail_rate.{format_type}'
             qs = VoIPRetailRate.objects.values('prefix', 'retail_rate').filter(voip_retail_plan_id=request.POST['plan_id'])
 
             # Content writing in file
@@ -536,10 +540,7 @@ class VoIPCarrierPlanAdmin(admin.ModelAdmin):
     ]
 
     def get_readonly_fields(self, request, obj=None):
-        if obj:
-            # In edit mode
-            return ('callsent',) + self.readonly_fields
-        return self.readonly_fields
+        return ('callsent',) + self.readonly_fields if obj else self.readonly_fields
 
 admin.site.register(VoIPCarrierPlan, VoIPCarrierPlanAdmin)
 
@@ -622,8 +623,10 @@ class VoIPCarrierRateAdmin(admin.ModelAdmin):
         form = Carrier_Rate_fileExport(request.POST or None, initial={'export_to': Export_choice.CSV})
         if form.is_valid():
             format_type = request.POST.get('export_to')
-            response = HttpResponse(content_type='text/%s' % format_type)
-            response['Content-Disposition'] = 'attachment;filename=export_carrier_rate.%s' % format
+            response = HttpResponse(content_type=f'text/{format_type}')
+            response[
+                'Content-Disposition'
+            ] = f'attachment;filename=export_carrier_rate.{format}'
 
             qs = VoIPCarrierRate.objects.values('prefix', 'carrier_rate').filter(
                 voip_carrier_plan_id=request.POST['plan_id'])

@@ -46,7 +46,7 @@ class Switch(caching.base.CachingMixin, models.Model):
     objects = caching.base.CachingManager()
 
     def __unicode__(self):
-        return '[%s] %s' % (self.id, self.ipaddress)
+        return f'[{self.id}] {self.ipaddress}'
 
     class Meta:
         verbose_name = _("switch")

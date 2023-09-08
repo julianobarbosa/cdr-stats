@@ -28,17 +28,13 @@ class CDRImportRouter(object):
         """
         Attempts to read auth models go to import_cdr.
         """
-        if model._meta.app_label == 'import_cdr':
-            return 'import_cdr'
-        return None
+        return 'import_cdr' if model._meta.app_label == 'import_cdr' else None
 
     def db_for_write(self, model, **hints):
         """
         Attempts to write auth models go to import_cdr.
         """
-        if model._meta.app_label == 'import_cdr':
-            return 'import_cdr'
-        return None
+        return 'import_cdr' if model._meta.app_label == 'import_cdr' else None
 
     def allow_relation(self, obj1, obj2, **hints):
         """
@@ -54,6 +50,4 @@ class CDRImportRouter(object):
         Make sure the auth app only appears in the 'import_cdr'
         database.
         """
-        if app_label == 'import_cdr':
-            return db == 'import_cdr'
-        return None
+        return db == 'import_cdr' if app_label == 'import_cdr' else None

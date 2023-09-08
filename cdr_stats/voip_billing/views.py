@@ -40,20 +40,17 @@ def rest_api_call(request, api_url):
     response = False
     try:
         response = requests.get(api_url, auth=(request.user, request.user), timeout=1.0)
-        logging.debug('API requests.get response: ' + response)
+        logging.debug(f'API requests.get response: {response}')
     except requests.exceptions.Timeout:
         # Todo: we may want to deal with error nicely
-        logging.debug('API Timeout Error : ' + api_url)
+        logging.debug(f'API Timeout Error : {api_url}')
     except:
-        logging.debug('API Error : ' + api_url)
+        logging.debug(f'API Error : {api_url}')
 
     if response and response.status_code == 200:
         # due to string response of API, we need to convert response in to array
         rate_list = response.content.replace('[', '').replace(']', '').replace('}, {', '}|{').split('|')
-        for i in rate_list:
-            if i:
-                # convert string into dict
-                final_rate_list.append(ast.literal_eval(i))
+        final_rate_list.extend(ast.literal_eval(i) for i in rate_list if i)
     return final_rate_list
 
 
@@ -90,15 +87,13 @@ def voip_rates(request):
     if form.is_valid():
         dialcode = request.POST.get('prefix')
         request.session['dialcode'] = dialcode
+    elif (request.session.get('dialcode') and (request.GET.get('page') or request.GET.get('sort_by'))):
+        dialcode = request.session.get('dialcode')
+        form = PrefixRetailRateForm(initial={'prefix': dialcode})
     else:
-        # pagination with prefix code
-        if (request.session.get('dialcode') and (request.GET.get('page') or request.GET.get('sort_by'))):
-            dialcode = request.session.get('dialcode')
-            form = PrefixRetailRateForm(initial={'prefix': dialcode})
-        else:
-            # Reset variables
-            request.session['dialcode'] = ''
-            dialcode = ''
+        # Reset variables
+        request.session['dialcode'] = ''
+        dialcode = ''
     if hasattr(request.user, 'userprofile'):
         voipplan_id = request.user.userprofile.voipplan_id
         if dialcode:
@@ -133,8 +128,10 @@ def export_rate(request):
         according to search parameters & store into csv file
     """
     format_type = request.GET['format']
-    response = HttpResponse(content_type='text/%s' % format_type)
-    response['Content-Disposition'] = 'attachment;filename=call_rate.%s' % format_type
+    response = HttpResponse(content_type=f'text/{format_type}')
+    response[
+        'Content-Disposition'
+    ] = f'attachment;filename=call_rate.{format_type}'
 
     headers = ('prefix', 'destination', 'retail_rate')
 
@@ -143,10 +140,10 @@ def export_rate(request):
         api_url = request.session['session_api_url']
         final_result = rest_api_call(request, api_url)
 
-    list_val = []
-    for row in final_result:
-        list_val.append((row['prefix'], row['prefix__destination'], row['retail_rate']))
-
+    list_val = [
+        (row['prefix'], row['prefix__destination'], row['retail_rate'])
+        for row in final_result
+    ]
     data = tablib.Dataset(*list_val, headers=headers)
 
     if format_type == Export_choice.XLS:
@@ -185,8 +182,7 @@ def simulator(request):
         destination_no = request.POST.get("destination_no")
         if hasattr(request.user, 'userprofile'):
             voipplan_id = request.user.userprofile.voipplan_id
-            allowed = prefix_allowed_to_call(destination_no, voipplan_id)
-            if allowed:
+            if allowed := prefix_allowed_to_call(destination_no, voipplan_id):
                 rates = rate_engine(voipplan_id=voipplan_id, dest_number=destination_no)
                 for rate in rates:
                     r_r_plan = VoIPRetailRate.objects.get(id=rate.rrid)
@@ -219,11 +215,9 @@ def billing_report(request):
         daily billing analytics for given date range
     """
     switch_id = 0
-    tday = datetime.today()
+    tday = datetime.now()
     total_data = []
     charttype = "lineWithFocusChart"
-    hourly_chartdata = {"x": []}
-
     form = BillingReportForm(request.POST or None,
                              initial={'from_date': tday.strftime('%Y-%m-%d 00:00'),
                                     'to_date': tday.strftime('%Y-%m-%d 23:55'),
@@ -242,19 +236,18 @@ def billing_report(request):
 
     hourly_data = get_report_cdr_per_switch(request.user, 'hour', start_date, end_date, switch_id)
 
-    hourly_chartdata['x'] = hourly_data["nbcalls"]["x_timestamp"]
-
+    hourly_chartdata = {"x": [], 'x': hourly_data["nbcalls"]["x_timestamp"]}
     i = 0
     for metric in metrics:
         extra_serie = {
-            "tooltip": {"y_start": "", "y_end": " " + metric},
-            "date_format": "%d %b %y %H:%M%p"
+            "tooltip": {"y_start": "", "y_end": f" {metric}"},
+            "date_format": "%d %b %y %H:%M%p",
         }
         for switch in hourly_data[metric]["columns"]:
             i = i + 1
-            hourly_chartdata['name' + str(i)] = get_switch_ip_addr(switch) + "_" + metric
-            hourly_chartdata['y' + str(i)] = hourly_data[metric]["values"][str(switch)]
-            hourly_chartdata['extra' + str(i)] = extra_serie
+            hourly_chartdata[f'name{str(i)}'] = f"{get_switch_ip_addr(switch)}_{metric}"
+            hourly_chartdata[f'y{str(i)}'] = hourly_data[metric]["values"][str(switch)]
+            hourly_chartdata[f'extra{str(i)}'] = extra_serie
 
     total_calls = hourly_data["nbcalls"]["total"]
     total_duration = hourly_data["duration"]["total"]
